@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lista de Ventas - Inbotf System</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f2f5;
+            color: #333;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 30px auto;
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+            padding: 30px;
+        }
+        h1 {
+            color: #4CAF50;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.2em;
+        }
+        .sale-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .sale-table th,
+        .sale-table td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        .sale-table th {
+            background-color: #e9ecef;
+            font-weight: bold;
+            color: #555;
+        }
+        .sale-table tr:nth-child(even) {
+            background-color: #f6f6f6;
+        }
+        .sale-table tr:hover {
+            background-color: #e2e6ea;
+        }
+        .loading-message {
+            text-align: center;
+            font-size: 1.2em;
+            color: #555;
+            margin-top: 50px;
+        }
+        .back-button {
+            display: block;
+            width: fit-content;
+            margin: 20px auto 0;
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: background-color 0.3s ease;
+        }
+        .back-button:hover {
+            background-color: #0056b3;
+        }
+        /* Estilos para el formulario de agregar venta */
+        .form-section {
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+        .form-section h2 {
+            font-size: 1.8em;
+            color: #333;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #555;
+        }
+        .form-group input[type="text"],
+        .form-group input[type="number"],
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 1em;
+            box-sizing: border-box;
+        }
+        .form-actions {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .form-actions button {
+            background-color: #007bff;
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 6px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            margin: 5px;
+        }
+        .form-actions button:hover {
+            background-color: #0056b3;
+        }
+        .message {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+            font-weight: bold;
+        }
+        .message.success {
+            background-color: #d4edda;
+            color: #155724;
+            border-color: #c3e6cb;
+        }
+        .message.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border-color: #f5c6cb;
+        }
+        /* Estilos para los detalles de la venta */
+        .sale-details-section {
+            border: 1px solid #eee;
+            padding: 20px;
+            margin-top: 20px;
+            border-radius: 8px;
+            background-color: #ffffff;
+        }
+        .sale-details-section h3 {
+            margin-top: 0;
+            color: #555;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .detail-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 50px;
+            gap: 15px;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 10px;
+            background-color: #f0f0f0;
+            border-radius: 5px;
+        }
+        .detail-row button {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 8px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: background-color 0.3s ease;
+        }
+        .detail-row button:hover {
+            background-color: #c82333;
+        }
+        .add-detail-button {
+            background-color: #28a745;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 6px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            margin-top: 10px;
+        }
+        .add-detail-button:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Ventas Realizadas</h1>
+
+        <div class="form-section">
+            <h2>Registrar Nueva Venta</h2>
+            <form id="addSaleForm">
+                <div class="form-group">
+                    <label for="metodo_pago">Método de Pago:</label>
+                    <input type="text" id="metodo_pago" name="metodo_pago" required>
+                </div>
+                <div class="form-group">
+                    <label for="vendedor">Vendedor:</label>
+                    <input type="text" id="vendedor" name="vendedor" required>
+                </div>
+
+                <div class="sale-details-section">
+                    <h3>Detalles de la Venta</h3>
+                    <div id="details-container">
+                        <!-- Filas de detalles se añadirán aquí con JS -->
+                    </div>
+                    <button type="button" class="add-detail-button" id="add-detail-row-button">Añadir Producto</button>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit">Registrar Venta</button>
+                </div>
+                <div id="form-message" class="message" style="display: none;"></div>
+            </form>
+        </div>
+
+        <div id="sales-container">
+            <p class="loading-message">Cargando ventas...</p>
+        </div>
+        <a href="/dashboard/" class="back-button">Volver al Dashboard</a>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const salesContainer = document.getElementById('sales-container');
+            const apiURL = 'http://127.0.0.1:8000/api/ventas/'; // URL de tu API de ventas
+            const addSaleForm = document.getElementById('addSaleForm');
+            const formMessage = document.getElementById('form-message');
+            const detailsContainer = document.getElementById('details-container');
+            const addDetailRowButton = document.getElementById('add-detail-row-button');
+
+            let products = []; // Para almacenar productos para los selectores
+
+            // Función para cargar productos
+            async function loadProducts() {
+                try {
+                    const productsResponse = await fetch('http://127.0.0.1:8000/api/productos/');
+                    products = (await productsResponse.json()).results || [];
+                    // Añadir una fila de detalle inicial
+                    addDetailRow();
+                } catch (error) {
+                    console.error('Error al cargar productos para el formulario de venta:', error);
+                    formMessage.textContent = 'Error al cargar opciones de producto.';
+                    formMessage.classList.add('error');
+                    formMessage.style.display = 'block';
+                }
+            }
+
+            // Función para añadir una nueva fila de detalle de venta
+            function addDetailRow(product = null, quantity = 1, unit_price = '') {
+                const detailRow = document.createElement('div');
+                detailRow.classList.add('detail-row');
+                detailRow.innerHTML = `
+                    <div class="form-group">
+                        <label>Producto:</label>
+                        <select class="product-select" required>
+                            <option value="">Seleccione un producto</option>
+                            ${products.map(p => `<option value="${p.id}" data-price="${p.precio_venta}">${p.nombre} (Stock: ${p.stock_actual})</option>`).join('')}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Cantidad:</label>
+                        <input type="number" class="cantidad-input" value="${quantity}" min="1" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Precio Unitario:</label>
+                        <input type="number" class="precio-unitario-input" value="${unit_price}" step="0.01" required>
+                    </div>
+                    <button type="button" class="remove-detail-row-button">X</button>
+                `;
+
+                detailsContainer.appendChild(detailRow);
+
+                // Add event listener for product selection
+                const productSelect = detailRow.querySelector('.product-select');
+                productSelect.addEventListener('change', (event) => {
+                    const selectedOption = event.target.selectedOptions[0];
+                    const price = selectedOption.dataset.price;
+                    const precioUnitarioInput = detailRow.querySelector('.precio-unitario-input');
+                    if (price) {
+                        precioUnitarioInput.value = parseFloat(price).toFixed(2);
+                    } else {
+                        precioUnitarioInput.value = '';
+                    }
+                });
+
+                // Set initial values if provided (for loading existing details if needed, though not currently used)
+                if (product) {
+                    productSelect.value = product;
+                }
+            }
+
+            // Event listener para añadir una nueva fila de detalle
+            addDetailRowButton.addEventListener('click', () => {
+                addDetailRow();
+            });
+
+            // Delegación de eventos para eliminar filas de detalle
+            detailsContainer.addEventListener('click', (event) => {
+                if (event.target.classList.contains('remove-detail-row-button')) {
+                    event.target.closest('.detail-row').remove();
+                }
+            });
+
+            // Función para cargar ventas
+            async function loadSales() {
+                try {
+                    const response = await fetch(apiURL);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    const data = await response.json();
+                    if (data.results && data.results.length > 0) {
+                        let tableHTML = `
+                            <table class="sale-table">
+                                <thead>
+                                    <tr>
+                                        <th>ID Venta</th>
+                                        <th>Fecha Venta</th>
+                                        <th>Total</th>
+                                        <th>Método Pago</th>
+                                        <th>Vendedor</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                        `;
+                        data.results.forEach(sale => {
+                            tableHTML += `
+                                <tr>
+                                    <td>${sale.id}</td>
+                                    <td>${new Date(sale.fecha_venta).toLocaleDateString()} ${new Date(sale.fecha_venta).toLocaleTimeString()}</td>
+                                    <td>$${parseFloat(sale.total).toFixed(2)}</td>
+                                    <td>${sale.metodo_pago}</td>
+                                    <td>${sale.vendedor}</td>
+                                </tr>
+                            `;
+                        });
+                        tableHTML += `
+                                </tbody>
+                            </table>
+                        `;
+                        salesContainer.innerHTML = tableHTML;
+                    } else {
+                        salesContainer.innerHTML = '<p class="loading-message">No hay ventas disponibles.</p>';
+                    }
+                } catch (error) {
+                    console.error('Error al cargar las ventas:', error);
+                    salesContainer.innerHTML = `<p class="loading-message" style="color: red;">Error al cargar ventas: ${error.message}</p>`;
+                }
+            }
+
+            // Event listeners
+            addSaleForm.addEventListener('submit', async (event) => {
+                event.preventDefault();
+
+                const metodo_pago = document.getElementById('metodo_pago').value;
+                const vendedor = document.getElementById('vendedor').value;
+
+                const detalles = [];
+                document.querySelectorAll('.detail-row').forEach(row => {
+                    const producto = row.querySelector('.product-select').value;
+                    const cantidad = row.querySelector('.cantidad-input').value;
+                    const precio_unitario = row.querySelector('.precio-unitario-input').value;
+
+                    if (producto && cantidad && precio_unitario) {
+                        detalles.push({
+                            producto: parseInt(producto),
+                            cantidad: parseInt(cantidad),
+                            precio_unitario: parseFloat(precio_unitario),
+                        });
+                    }
+                });
+
+                const saleData = {
+                    metodo_pago,
+                    vendedor,
+                    detalles, // Esto será manejado por el método create del ViewSet
+                };
+
+                try {
+                    const response = await fetch(apiURL, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(saleData),
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(`Error al registrar venta: ${JSON.stringify(errorData)}`);
+                    }
+
+                    formMessage.textContent = 'Venta registrada exitosamente!';
+                    formMessage.classList.remove('error');
+                    formMessage.classList.add('success');
+                    formMessage.style.display = 'block';
+                    addSaleForm.reset(); // Limpiar el formulario principal
+                    detailsContainer.innerHTML = ''; // Limpiar los detalles
+                    addDetailRow(); // Añadir una fila de detalle vacía para empezar
+                    loadSales(); // Recargar la lista de ventas
+
+                } catch (error) {
+                    console.error('Error al registrar venta:', error);
+                    formMessage.textContent = `Error: ${error.message}`;
+                    formMessage.classList.add('error');
+                    formMessage.style.display = 'block';
+                }
+            });
+
+            // Cargar datos al iniciar la página
+            loadProducts();
+            loadSales();
+        });
+    </script>
+</body>
+</html> 

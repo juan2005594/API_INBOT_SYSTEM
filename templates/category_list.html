@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lista de Categorías - Inbotf System</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f2f5;
+            color: #333;
+        }
+        .container {
+            max-width: 900px;
+            margin: 30px auto;
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+            padding: 30px;
+        }
+        h1 {
+            color: #4CAF50;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.2em;
+        }
+        /* Estilos para el formulario de agregar categoría */
+        .form-section {
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+        .form-section h2 {
+            font-size: 1.8em;
+            color: #333;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #555;
+        }
+        .form-group input[type="text"],
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 1em;
+            box-sizing: border-box;
+        }
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        .form-actions {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .form-actions button {
+            background-color: #007bff;
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 6px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .form-actions button:hover {
+            background-color: #0056b3;
+        }
+        .message {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+            font-weight: bold;
+        }
+        .message.success {
+            background-color: #d4edda;
+            color: #155724;
+            border-color: #c3e6cb;
+        }
+        .message.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border-color: #f5c6cb;
+        }
+
+        /* Estilos para la lista de categorías */
+        .category-list {
+            list-style: none;
+            padding: 0;
+        }
+        .category-item {
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            padding: 15px 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            transition: transform 0.2s ease-in-out;
+        }
+        .category-item:hover {
+            transform: translateY(-3px);
+        }
+        .category-item h2 {
+            font-size: 1.4em;
+            color: #333;
+            margin-top: 0;
+            margin-bottom: 8px;
+        }
+        .category-item p {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        .loading-message {
+            text-align: center;
+            font-size: 1.2em;
+            color: #555;
+            margin-top: 50px;
+        }
+        .back-button {
+            display: block;
+            width: fit-content;
+            margin: 20px auto 0;
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: background-color 0.3s ease;
+        }
+        .back-button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Categorías Registradas</h1>
+
+        <div class="form-section">
+            <h2>Agregar Nueva Categoría</h2>
+            <form id="addCategoryForm">
+                <div class="form-group">
+                    <label for="nombre">Nombre de la Categoría:</label>
+                    <input type="text" id="nombre" name="nombre" required>
+                </div>
+                <div class="form-group">
+                    <label for="descripcion">Descripción:</label>
+                    <textarea id="descripcion" name="descripcion"></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="submit">Agregar Categoría</button>
+                </div>
+                <div id="form-message" class="message" style="display: none;"></div>
+            </form>
+        </div>
+
+        <ul id="category-list" class="category-list">
+            <p class="loading-message">Cargando categorías...</p>
+        </ul>
+        <a href="/dashboard/" class="back-button">Volver al Dashboard</a>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const categoryList = document.getElementById('category-list');
+            const addCategoryForm = document.getElementById('addCategoryForm');
+            const formMessage = document.getElementById('form-message');
+            const apiURL = 'http://127.0.0.1:8000/api/categorias/'; // URL de tu API de categorías
+
+            // Función para cargar categorías
+            async function loadCategories() {
+                try {
+                    const response = await fetch(apiURL);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    const data = await response.json();
+                    categoryList.innerHTML = ''; // Limpiar el mensaje de carga
+                    if (data.results && data.results.length > 0) {
+                        data.results.forEach(category => {
+                            const listItem = document.createElement('li');
+                            listItem.classList.add('category-item');
+                            listItem.innerHTML = `
+                                <h2>${category.nombre}</h2>
+                                <p>${category.descripcion || 'Sin descripción'}</p>
+                            `;
+                            categoryList.appendChild(listItem);
+                        });
+                    } else {
+                        categoryList.innerHTML = '<p class="loading-message">No hay categorías disponibles.</p>';
+                    }
+                } catch (error) {
+                    console.error('Error al cargar las categorías:', error);
+                    categoryList.innerHTML = `<p class="loading-message" style="color: red;">Error al cargar categorías: ${error.message}</p>`;
+                }
+            }
+            
+            // Cargar categorías al iniciar la página
+            loadCategories();
+
+            // Manejar el envío del formulario
+            addCategoryForm.addEventListener('submit', async (event) => {
+                event.preventDefault();
+
+                const formData = new FormData(addCategoryForm);
+                const categoryData = {};
+                formData.forEach((value, key) => {
+                    categoryData[key] = value;
+                });
+
+                try {
+                    const response = await fetch(apiURL, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(categoryData),
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(`Error al agregar categoría: ${JSON.stringify(errorData)}`);
+                    }
+
+                    formMessage.textContent = 'Categoría agregada exitosamente!';
+                    formMessage.classList.remove('error');
+                    formMessage.classList.add('success');
+                    formMessage.style.display = 'block';
+                    addCategoryForm.reset(); // Limpiar el formulario
+                    loadCategories(); // Recargar la lista de categorías
+
+                } catch (error) {
+                    console.error('Error al agregar categoría:', error);
+                    formMessage.textContent = `Error: ${error.message}`;
+                    formMessage.classList.add('error');
+                    formMessage.style.display = 'block';
+                }
+            });
+        });
+    </script>
+</body>
+</html> 

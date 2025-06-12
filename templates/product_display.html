@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Productos Inbotf System</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f2f5;
+            color: #333;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 30px auto;
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+            padding: 30px;
+        }
+        h1 {
+            color: #4CAF50;
+            text-align: center;
+            margin-bottom: 40px;
+            font-size: 2.5em;
+        }
+        #products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 25px;
+        }
+        .product-card {
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            transition: transform 0.2s ease-in-out;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .product-card:hover {
+            transform: translateY(-5px);
+        }
+        .product-card h2 {
+            font-size: 1.5em;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .product-card p {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        .product-card .price {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #007bff;
+            margin-top: 15px;
+        }
+        .product-card img {
+            max-width: 100%;
+            height: 180px;
+            object-fit: contain;
+            margin-bottom: 15px;
+            border-radius: 5px;
+            background-color: #eee; /* Fondo para imágenes vacías */
+        }
+        .product-card .no-image {
+            background-color: #ccc;
+            height: 180px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 15px;
+            border-radius: 5px;
+        }
+        .loading-message {
+            text-align: center;
+            font-size: 1.2em;
+            color: #555;
+            margin-top: 50px;
+        }
+        /* Estilos para el formulario de agregar producto */
+        .form-section {
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+        .form-section h2 {
+            color: #4CAF50;
+            text-align: center;
+            margin-bottom: 25px;
+            font-size: 2em;
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #555;
+        }
+        .form-group input[type="text"],
+        .form-group input[type="number"],
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 1em;
+            box-sizing: border-box; /* Asegura que el padding no aumente el ancho total */
+        }
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        .form-actions {
+            grid-column: 1 / -1; /* Ocupa ambas columnas */
+            text-align: center;
+            margin-top: 20px;
+        }
+        .form-actions button {
+            background-color: #007bff;
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 6px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .form-actions button:hover {
+            background-color: #0056b3;
+        }
+        .message {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+            font-weight: bold;
+        }
+        .message.success {
+            background-color: #d4edda;
+            color: #155724;
+            border-color: #c3e6cb;
+        }
+        .message.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border-color: #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Catálogo de Productos</h1>
+
+        <div class="form-section">
+            <h2>Agregar Nuevo Producto</h2>
+            <form id="addProductForm">
+                {% csrf_token %}
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="codigo_barras">Código de Barras:</label>
+                        <input type="text" id="codigo_barras" name="codigo_barras" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="nombre">Nombre:</label>
+                        <input type="text" id="nombre" name="nombre" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="descripcion">Descripción:</label>
+                        <textarea id="descripcion" name="descripcion" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="categoria">Categoría:</label>
+                        <select id="categoria" name="categoria" required>
+                            <!-- Opciones cargadas por JS -->
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="proveedor">Proveedor:</label>
+                        <select id="proveedor" name="proveedor" required>
+                            <!-- Opciones cargadas por JS -->
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="precio_compra">Precio de Compra:</label>
+                        <input type="number" id="precio_compra" name="precio_compra" step="0.01" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="porcentaje_ganancia">% Ganancia:</label>
+                        <input type="number" id="porcentaje_ganancia" name="porcentaje_ganancia" step="0.01" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="stock_actual">Stock Actual:</label>
+                        <input type="number" id="stock_actual" name="stock_actual" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="stock_minimo">Stock Mínimo:</label>
+                        <input type="number" id="stock_minimo" name="stock_minimo" min="0" value="5" required>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="submit">Agregar Producto</button>
+                </div>
+                <div id="form-message" class="message" style="display: none;"></div>
+            </form>
+        </div>
+
+        <div id="products-grid">
+            <p class="loading-message">Cargando productos...</p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const productsGrid = document.getElementById('products-grid');
+            const apiURL = 'http://127.0.0.1:8000/api/productos/'; // URL de tu API de productos
+            const addProductForm = document.getElementById('addProductForm');
+            const formMessage = document.getElementById('form-message');
+            const categoriaSelect = document.getElementById('categoria');
+            const proveedorSelect = document.getElementById('proveedor');
+
+            // Function to get CSRF token
+            function getCookie(name) {
+                let cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    const cookies = document.cookie.split(';');
+                    for (let i = 0; i < cookies.length; i++) {
+                        const cookie = cookies[i].trim();
+                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
+                    }
+                }
+                return cookieValue;
+            }
+
+            // Función para cargar categorías y proveedores
+            async function loadForeignKeys() {
+                try {
+                    // Cargar categorías
+                    const categoriasResponse = await fetch('http://127.0.0.1:8000/api/categorias/');
+                    const categoriasData = await categoriasResponse.json();
+                    if (categoriasData.results) {
+                        categoriasData.results.forEach(cat => {
+                            const option = document.createElement('option');
+                            option.value = cat.id;
+                            option.textContent = cat.nombre;
+                            categoriaSelect.appendChild(option);
+                        });
+                    }
+
+                    // Cargar proveedores
+                    const proveedoresResponse = await fetch('http://127.0.0.1:8000/api/proveedores/');
+                    const proveedoresData = await proveedoresResponse.json();
+                    if (proveedoresData.results) {
+                        proveedoresData.results.forEach(prov => {
+                            const option = document.createElement('option');
+                            option.value = prov.id;
+                            option.textContent = prov.nombre;
+                            proveedorSelect.appendChild(option);
+                        });
+                    }
+                } catch (error) {
+                    console.error('Error al cargar categorías o proveedores:', error);
+                    formMessage.textContent = 'Error al cargar opciones de categoría/proveedor.';
+                    formMessage.classList.add('error');
+                    formMessage.style.display = 'block';
+                }
+            }
+
+            // Función para cargar productos
+            async function loadProducts() {
+                try {
+                    const response = await fetch(apiURL);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    const data = await response.json();
+                    productsGrid.innerHTML = ''; // Limpiar el mensaje de carga
+                    if (data.results && data.results.length > 0) { // Si tu API pagina, usa data.results
+                        data.results.forEach(product => { // O data.forEach(product => si no hay paginación
+                            const productCard = document.createElement('div');
+                            productCard.classList.add('product-card');
+
+                            let imageContent = '';
+                            if (product.imagen) {
+                                // Asegúrate de que la URL de la imagen es absoluta
+                                const imageUrl = product.imagen.startsWith('http') ? product.imagen : `http://127.0.0.1:8000${product.imagen}`;
+                                imageContent = `<img src="${imageUrl}" alt="${product.nombre}">`;
+                            } else {
+                                imageContent = `<div class="no-image">Sin Imagen</div>`;
+                            }
+
+                            productCard.innerHTML = `
+                                ${imageContent}
+                                <h2>${product.nombre}</h2>
+                                <p><strong>Código:</strong> ${product.codigo_barras}</p>
+                                <p>${product.descripcion}</p>
+                                <p><strong>Categoría:</strong> ${product.categoria_nombre || 'N/A'}</p>
+                                <p><strong>Proveedor:</strong> ${product.proveedor_nombre || 'N/A'}</p>
+                                <p class="price">Precio: $${parseFloat(product.precio_venta).toFixed(2)}</p>
+                                <p>Stock: ${product.stock_actual}</p>
+                            `;
+                            productsGrid.appendChild(productCard);
+                        });
+                    } else {
+                        productsGrid.innerHTML = '<p class="loading-message">No hay productos disponibles.</p>';
+                    }
+                } catch (error) {
+                    console.error('Error al cargar los productos:', error);
+                    productsGrid.innerHTML = `<p class="loading-message" style="color: red;">Error al cargar productos: ${error.message}</p>`;
+                }
+            }
+            
+            // Cargar datos al iniciar la página
+            loadForeignKeys();
+            loadProducts();
+
+            // Manejar el envío del formulario
+            addProductForm.addEventListener('submit', async function(event) {
+                event.preventDefault();
+
+                const formData = new FormData(addProductForm);
+                const productData = {
+                    codigo_barras: formData.get('codigo_barras'),
+                    nombre: formData.get('nombre'),
+                    descripcion: formData.get('descripcion'),
+                    categoria: parseInt(formData.get('categoria')),
+                    proveedor: parseInt(formData.get('proveedor')),
+                    precio_compra: parseFloat(formData.get('precio_compra')),
+                    porcentaje_ganancia: parseFloat(formData.get('porcentaje_ganancia')),
+                    stock_actual: parseInt(formData.get('stock_actual')),
+                    stock_minimo: parseInt(formData.get('stock_minimo'))
+                };
+
+                const csrfToken = getCookie('csrftoken');
+                console.log('CSRF Token being sent:', csrfToken);
+
+                try {
+                    const response = await fetch(apiURL, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': csrfToken
+                        },
+                        body: JSON.stringify(productData)
+                    });
+
+                    if (response.ok) {
+                        const newProduct = await response.json();
+                        console.log('Producto agregado:', newProduct);
+                        formMessage.textContent = 'Producto agregado exitosamente!';
+                        formMessage.classList.remove('error');
+                        formMessage.classList.add('success');
+                        formMessage.style.display = 'block';
+                        addProductForm.reset(); // Limpiar el formulario
+                        loadProducts(); // Recargar la lista de productos
+                    } else {
+                        const errorData = await response.json();
+                        throw new Error(`Error al agregar producto: ${JSON.stringify(errorData)}`);
+                    }
+                } catch (error) {
+                    console.error('Error al agregar producto:', error);
+                    formMessage.textContent = `Error: ${error.message}`;
+                    formMessage.classList.add('error');
+                    formMessage.style.display = 'block';
+                }
+            });
+        });
+    </script>
+</body>
+</html> 

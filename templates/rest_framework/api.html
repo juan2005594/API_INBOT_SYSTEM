@@ -1,0 +1,33 @@
+{% extends "rest_framework/base.html" %}
+
+{% block content %}
+<div class="container">
+    <h1 style="color: #4CAF50;">¡Bienvenido al Sistema Inbotf!</h1>
+    <p>Esta es la interfaz de tu API. Aquí puedes explorar y probar tus recursos.</p>
+    {{ block.super }}
+</div>
+{% endblock %}
+
+{% block style %}
+<style>
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background-color: #f0f2f5;
+    }
+    .container {
+        padding: 20px;
+        background-color: #ffffff;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        margin-top: 20px;
+    }
+    h1 {
+        text-align: center;
+        margin-bottom: 20px;
+    }
+    p {
+        text-align: center;
+        color: #555;
+    }
+</style>
+{% endblock %} 

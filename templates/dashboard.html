@@ -1,0 +1,1473 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            display: flex;
+            min-height: 100vh;
+            background-color: #f8f9fa;
+        }
+        .sidebar {
+            width: 250px;
+            background-color: #343a40;
+            color: white;
+            padding-top: 20px;
+            flex-shrink: 0;
+        }
+        .sidebar .nav-link {
+            color: white;
+            padding: 10px 15px;
+        }
+        .sidebar .nav-link:hover {
+            background-color: #495057;
+        }
+        .main-content {
+            flex-grow: 1;
+            padding: 20px;
+        }
+        .navbar-brand {
+            font-weight: bold;
+            color: white !important;
+            padding-left: 15px;
+            margin-bottom: 20px;
+            display: block;
+        }
+        .card-icon {
+            font-size: 3rem;
+            opacity: 0.6;
+        }
+        .dashboard-card {
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .dashboard-card:hover {
+            transform: translateY(-5px);
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar d-flex flex-column">
+        <a class="navbar-brand" href="#">MI SISTEMA DE INVENTARIO</a>
+        <ul class="nav flex-column mb-auto" id="sidebar-nav">
+            <!-- Navigation links will be loaded here by JavaScript -->
+        </ul>
+        <div class="mt-auto p-3">
+            <button class="btn btn-danger w-100" onclick="logout()">Cerrar Sesión</button>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <h1 class="mb-4">INBOTF_SYSTEM</h1>
+        <div class="alert alert-info" id="user-info"></div>
+
+        <!-- Dashboard Cards -->
+        <div class="row" id="dashboard-cards">
+            <!-- Cards will be loaded here by JavaScript -->
+        </div>
+
+        <!-- Modals for each functionality -->
+        <!-- Example Modal for Ver Productos (you'd have similar ones for other features) -->
+        <div class="modal fade" id="verProductosModal" tabindex="-1" aria-labelledby="verProductosModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-xl">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="verProductosModalLabel">Productos</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <!-- Product listing will go here -->
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Nombre</th>
+                                    <th>Código de Barras</th>
+                                    <th>Precio Compra</th>
+                                    <th>% Ganancia</th>
+                                    <th>Precio Venta</th>
+                                    <th>Stock Actual</th>
+                                    <th>Stock Mínimo</th>
+                                    <th>Categoría</th>
+                                    <th>Proveedor</th>
+                                </tr>
+                            </thead>
+                            <tbody id="productos-table-body">
+                                <!-- Products will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Category Modal -->
+        <div class="modal fade" id="addCategoriaModal" tabindex="-1" aria-labelledby="addCategoriaModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="addCategoriaModalLabel">Agregar Categoría</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="addCategoriaForm">
+                            <div class="mb-3">
+                                <label for="categoriaNombre" class="form-label">Nombre</label>
+                                <input type="text" class="form-control" id="categoriaNombre" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="categoriaDescripcion" class="form-label">Descripción</label>
+                                <textarea class="form-control" id="categoriaDescripcion"></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Guardar Categoría</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Proveedor Modal -->
+        <div class="modal fade" id="addProveedorModal" tabindex="-1" aria-labelledby="addProveedorModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="addProveedorModalLabel">Agregar Proveedor</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="addProveedorForm">
+                            <div class="mb-3">
+                                <label for="proveedorNombre" class="form-label">Nombre</label>
+                                <input type="text" class="form-control" id="proveedorNombre" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="proveedorNit" class="form-label">NIT</label>
+                                <input type="text" class="form-control" id="proveedorNit">
+                            </div>
+                            <div class="mb-3">
+                                <label for="proveedorTelefono" class="form-label">Teléfono</label>
+                                <input type="text" class="form-control" id="proveedorTelefono">
+                            </div>
+                            <div class="mb-3">
+                                <label for="proveedorDireccion" class="form-label">Dirección</label>
+                                <input type="text" class="form-control" id="proveedorDireccion">
+                            </div>
+                            <div class="mb-3">
+                                <label for="proveedorEmail" class="form-label">Email</label>
+                                <input type="email" class="form-control" id="proveedorEmail">
+                            </div>
+                            <button type="submit" class="btn btn-primary">Guardar Proveedor</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Product Modal -->
+        <div class="modal fade" id="addProductModal" tabindex="-1" aria-labelledby="addProductModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="addProductModalLabel">Agregar Producto</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="addProductForm">
+                            <div class="mb-3">
+                                <label for="productNombre" class="form-label">Nombre</label>
+                                <input type="text" class="form-control" id="productNombre" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="productDescripcion" class="form-label">Descripción</label>
+                                <textarea class="form-control" id="productDescripcion" rows="3"></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label for="productCodigoBarras" class="form-label">Código de Barras</label>
+                                <input type="text" class="form-control" id="productCodigoBarras" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="productPrecioCompra" class="form-label">Precio Compra</label>
+                                <input type="number" step="0.01" class="form-control" id="productPrecioCompra" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="productPorcentajeGanancia" class="form-label">% Ganancia</label>
+                                <input type="number" step="0.01" class="form-control" id="productPorcentajeGanancia" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="productStockActual" class="form-label">Stock Actual</label>
+                                <input type="number" class="form-control" id="productStockActual" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="productStockMinimo" class="form-label">Stock Mínimo</label>
+                                <input type="number" class="form-control" id="productStockMinimo" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="productCategoria" class="form-label">Categoría</label>
+                                <select class="form-select" id="productCategoria" required>
+                                    <!-- Options populated by JS -->
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="productProveedor" class="form-label">Proveedor</label>
+                                <select class="form-select" id="productProveedor" required>
+                                    <!-- Options populated by JS -->
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Guardar Producto</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Register Sale Modal -->
+        <div class="modal fade" id="registerSaleModal" tabindex="-1" aria-labelledby="registerSaleModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="registerSaleModalLabel">Registrar Venta</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="registerSaleForm">
+                            {% csrf_token %}
+                            <input type="hidden" id="saleMetodoPago" value="Efectivo">
+                            <input type="hidden" id="saleVendedor" value="Vendedor_Predeterminado">
+                            <div class="mb-3">
+                                <label for="saleDate" class="form-label">Fecha de Venta</label>
+                                <input type="date" class="form-control" id="saleDate" value="{{ 'now'|date:'Y-m-d' }}">
+                            </div>
+                            <div id="sale-details-container">
+                                <div class="row mb-2 sale-detail-item">
+                                    <div class="col-md-5">
+                                        <label class="form-label">Producto</label>
+                                        <select class="form-select sale-product-select" required>
+                                            <!-- Options populated by JS -->
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">Cantidad</label>
+                                        <input type="number" class="form-control sale-cantidad-input" min="1" value="1" required>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">Precio Unitario</label>
+                                        <input type="number" step="0.01" class="form-control sale-precio-unitario-input" readonly required>
+                                    </div>
+                                    <div class="col-md-1 d-flex align-items-end">
+                                        <button type="button" class="btn btn-danger remove-sale-detail">X</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-info mt-3" id="add-sale-detail">Agregar Otro Producto</button>
+                            <button type="submit" class="btn btn-primary mt-3">Registrar Venta</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- View Sales Modal -->
+        <div class="modal fade" id="viewSalesModal" tabindex="-1" aria-labelledby="viewSalesModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-xl">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="viewSalesModalLabel">Ventas Realizadas</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>ID Venta</th>
+                                    <th>Fecha</th>
+                                    <th>Método Pago</th>
+                                    <th>Vendedor</th>
+                                    <th>Total</th>
+                                    <th>Detalles</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ventas-table-body">
+                                <!-- Sales will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Register Purchase Invoice Modal -->
+        <div class="modal fade" id="registerPurchaseModal" tabindex="-1" aria-labelledby="registerPurchaseModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="registerPurchaseModalLabel">Registrar Factura de Compra</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="registerPurchaseForm">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label for="purchaseProveedor" class="form-label">Proveedor</label>
+                                <select class="form-select" id="purchaseProveedor" required>
+                                    <!-- Options populated by JS -->
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="purchaseNumeroFactura" class="form-label">Número de Factura</label>
+                                <input type="text" class="form-control" id="purchaseNumeroFactura" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="purchaseFechaCompra" class="form-label">Fecha de Compra</label>
+                                <input type="date" class="form-control" id="purchaseFechaCompra" value="" required>
+                            </div>
+
+                            <h5>Detalles de la Factura de Compra</h5>
+                            <div id="purchase-details-container">
+                                <div class="row mb-2 purchase-detail-item">
+                                    <div class="col-md-4">
+                                        <label class="form-label">Producto</label>
+                                        <div class="input-group">
+                                            <select class="form-select purchase-product-select" required>
+                                                <!-- Options populated by JS -->
+                                            </select>
+                                            <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#addProductModal" title="Agregar Nuevo Producto">
+                                                <i class="bi bi-plus-lg"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">Cantidad</label>
+                                        <input type="number" class="form-control purchase-cantidad-input" min="1" value="1" required>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">Precio Unitario</label>
+                                        <input type="number" step="0.01" class="form-control purchase-precio-unitario-input" required>
+                                    </div>
+                                    <div class="col-md-2 d-flex align-items-end">
+                                        <button type="button" class="btn btn-danger w-100 remove-purchase-detail">X</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-info mt-3" id="add-purchase-detail">Agregar Otro Producto</button>
+                            <button type="submit" class="btn btn-primary mt-3">Registrar Factura de Compra</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reporte de Compras Modal -->
+        <div class="modal fade" id="reporteComprasModal" tabindex="-1" aria-labelledby="reporteComprasModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-xl">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="reporteComprasModalLabel">Reporte de Compras por Mes y Año</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="reporteComprasForm" class="row g-3 align-items-end mb-4">
+                            <div class="col-md-4">
+                                <label for="reporteComprasMes" class="form-label">Mes</label>
+                                <input type="number" class="form-control" id="reporteComprasMes" min="1" max="12" value="1" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="reporteComprasAno" class="form-label">Año</label>
+                                <input type="number" class="form-control" id="reporteComprasAno" min="2000" value="2024" required>
+                            </div>
+                            <div class="col-md-4 d-flex align-items-end">
+                                <button type="submit" class="btn btn-primary w-100">Generar Reporte</button>
+                            </div>
+                        </form>
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Factura ID</th>
+                                    <th>Número Factura</th>
+                                    <th>Proveedor</th>
+                                    <th>Fecha Compra</th>
+                                    <th>Total Factura</th>
+                                    <th>Detalles Productos</th>
+                                </tr>
+                            </thead>
+                            <tbody id="reporte-compras-table-body">
+                                <!-- Reporte de compras se cargará aquí -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reporte de Inventario Modal -->
+        <div class="modal fade" id="inventoryReportModal" tabindex="-1" aria-labelledby="inventoryReportModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-xl">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="inventoryReportModalLabel">Reporte de Inventario General</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <h5>Total Productos en Inventario: <span id="report-total-products">0</span></h5>
+                            </div>
+                            <div class="col-md-6">
+                                <h5>Valor Total de Inventario: $<span id="report-total-value">0.00</span></h5>
+                            </div>
+                        </div>
+                        <h6>Detalle de Productos:</h6>
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Producto</th>
+                                    <th>Categoría</th>
+                                    <th>Proveedor</th>
+                                    <th>Stock Actual</th>
+                                    <th>Stock Mínimo</th>
+                                    <th>Valor Unitario Venta</th>
+                                    <th>Valor Total Item</th>
+                                </tr>
+                            </thead>
+                            <tbody id="report-all-products-body">
+                                <!-- Datos del reporte de inventario se cargará aquí -->
+                            </tbody>
+                        </table>
+                        <h6>Productos con Stock Bajo:</h6>
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Producto</th>
+                                    <th>Stock Actual</th>
+                                    <th>Stock Mínimo</th>
+                                </tr>
+                            </thead>
+                            <tbody id="report-low-stock-body">
+                                <!-- Productos con stock bajo se cargará aquí -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Ventas del Día Modal -->
+        <div class="modal fade" id="ventasDiaModal" tabindex="-1" aria-labelledby="ventasDiaModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="ventasDiaModalLabel">Detalle de Ventas del Día</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <h6 id="ventasDiaFecha"></h6>
+                        <p>Total de Ventas: $<span id="ventasDiaTotal">0.00</span></p>
+                        <p>Cantidad de Ventas: <span id="ventasDiaCantidad">0</span></p>
+                        <hr>
+                        <h6>Ventas Individuales:</h6>
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>ID Venta</th>
+                                    <th>Método Pago</th>
+                                    <th>Vendedor</th>
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ventas-dia-list-body">
+                                <!-- Ventas individuales se cargarán aquí -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const API_BASE_URL = 'http://127.0.0.1:8000/api/';
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    // Does this cookie string begin with the name we want?
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        function setAuthToken(token, username, groups) {
+            localStorage.setItem('authToken', token);
+            localStorage.setItem('username', username);
+            localStorage.setItem('userGroups', JSON.stringify(groups)); // Store groups as a JSON string
+        }
+
+        function getAuthToken() {
+            const token = localStorage.getItem('authToken');
+            const username = localStorage.getItem('username');
+            const groupsRaw = localStorage.getItem('userGroups');
+            let groups = [];
+            try {
+                groups = groupsRaw ? JSON.parse(groupsRaw) : []; // Parse groups back to an array, handle null
+            } catch (e) {
+                console.error("Error parsing user groups from localStorage:", e);
+                groups = [];
+            }
+            return { token, username, groups };
+        }
+
+        function clearAuthToken() {
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('username');
+            localStorage.removeItem('userGroups');
+        }
+
+        async function logout() {
+            const { token } = getAuthToken();
+            try {
+                const response = await fetch(`${API_BASE_URL}logout/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Token ${token}`,
+                        'X-CSRFToken': getCookie('csrftoken')
+                    }
+                });
+                if (response.ok) {
+                    clearAuthToken();
+                    window.location.href = '/'; // Redirect to login page
+                } else {
+                    // If logout itself fails with 401 (invalid token), fetchAPI will handle the redirect
+                    console.error('Error al cerrar sesión:', response.status, response.statusText);
+                    // alert('Error al cerrar sesión.'); // Avoid duplicate alerts if fetchAPI handles it
+                }
+            } catch (error) {
+                console.error('Error de red al cerrar sesión:', error);
+                alert('Error de red al cerrar sesión.');
+            }
+        }
+
+        async function fetchAPI(endpoint, method = 'GET', data = null) {
+            const { token } = getAuthToken();
+            console.log(`Intentando fetch a ${endpoint} con token: ${token ? token.substring(0, 5) + '...' : 'No token'}`); // Log the token (first 5 chars)
+
+            const headers = {
+                'X-CSRFToken': getCookie('csrftoken')
+            };
+
+            if (token) {
+                headers['Authorization'] = `Token ${token}`;
+            }
+
+            if (data) {
+                headers['Content-Type'] = 'application/json';
+            }
+
+            const config = {
+                method: method,
+                headers: headers,
+            };
+
+            if (data) {
+                config.body = JSON.stringify(data);
+                console.log(`DEBUG: fetchAPI - Enviando datos a ${endpoint}:`, data);
+            }
+
+            const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
+
+            if (response.status === 401) {
+                console.error(`401 Unauthorized para ${endpoint}. El token puede ser inválido. Redirigiendo a inicio de sesión.`);
+                clearAuthToken();
+                window.location.href = '/'; // Redirect to login page
+                throw new Error('Token inválido. Redirigiendo a inicio de sesión.'); // Stop further execution
+            }
+
+            if (!response.ok) {
+                let errorData;
+                if (response.headers.get('content-type')?.includes('application/json')) {
+                    errorData = await response.json();
+                    console.error(`Error al hacer fetch a ${endpoint} (JSON):`, errorData);
+                    
+                    // Enhanced error message extraction
+                    let errorMessage = 'Algo salió mal';
+                    if (errorData.detail) {
+                        errorMessage = errorData.detail;
+                    } else if (errorData.error) {
+                        errorMessage = errorData.error;
+                    } else if (errorData.detalles && Array.isArray(errorData.detalles)) {
+                        // Handle nested errors for 'detalles' field
+                        const detalleErrors = errorData.detalles.map((itemErrors, index) => {
+                            if (typeof itemErrors === 'object' && itemErrors !== null) {
+                                let itemErrorMessage = `Detalle ${index + 1}:\n`;
+                                for (const field in itemErrors) {
+                                    const fieldValue = itemErrors[field];
+                                    // Ensure fieldValue is always treated as a string for joining, or joined if it's an array
+                                    if (Array.isArray(fieldValue)) {
+                                        itemErrorMessage += `  ${field}: ${fieldValue.join(', ')}\n`;
+                                    } else {
+                                        itemErrorMessage += `  ${field}: ${String(fieldValue)}\n`;
+                                    }
+                                }
+                                return itemErrorMessage;
+                            } else {
+                                return `Detalle ${index + 1}: ${String(itemErrors)}`; // Direct error string for the item
+                            }
+                        });
+                        errorMessage = 'Errores en detalles de la venta:\n' + detalleErrors.join('\n');
+                    } else if (typeof errorData === 'object') {
+                        // Fallback for other generic object errors
+                        errorMessage = JSON.stringify(errorData);
+                    }
+                    throw new Error(errorMessage);
+                } else {
+                    // If it's not JSON, it's likely an HTML error page from Django
+                    const errorText = await response.text();
+                    console.error(`Error al hacer fetch a ${endpoint} (no JSON, status: ${response.status}):`, errorText);
+                    throw new Error('Error del servidor. Revisa la consola para más detalles.');
+                }
+            }
+            return response.json();
+        }
+
+        // --- Dashboard Loading Logic ---
+        async function loadDashboardData() {
+            const { username, groups, token } = getAuthToken();
+            if (!token) {
+                window.location.href = '/'; // Redirect to login if no token
+                return;
+            }
+            
+            console.log("Cargando dashboard para:", username, "Grupos recuperados de localStorage:", groups); // Debugging: Check retrieved groups
+            
+            const displayGroups = Array.isArray(groups) ? groups.join(', ') : 'Desconocido';
+            const userInfoDiv = document.getElementById('user-info');
+            userInfoDiv.innerHTML = `<i class="fas fa-user-circle"></i> Bienvenido, ${displayGroups}!`;
+
+            const isAdmin = Array.isArray(groups) && (groups.includes('Administradores') || groups.includes('Administrador') || groups.includes('admin'));
+            const isSeller = Array.isArray(groups) && groups.includes('Vendedor');
+
+            console.log("Valor de isAdmin:", isAdmin); // Nuevo console.log para verificar isAdmin
+
+            const sidebarNav = document.getElementById('sidebar-nav');
+            sidebarNav.innerHTML = ''; // Clear existing
+            const dashboardCards = document.getElementById('dashboard-cards');
+            dashboardCards.innerHTML = ''; // Clear existing
+
+            // Funcionalidades comunes para todos los usuarios (siempre visibles)
+            addNavLink(sidebarNav, 'Ver Productos', '/catalogo/'); // Direct link
+            addDashboardCard(dashboardCards, 'Ver Productos', 'bi-box-seam', 'primary', '/catalogo/'); // Direct link
+            addNavLink(sidebarNav, 'Ver Ventas', '/ventas-lista/'); // Direct link
+            addDashboardCard(dashboardCards, 'Ver Ventas', 'bi-cash-coin', 'info', '/ventas-lista/'); // Direct link
+
+            if (isAdmin) {
+                console.log("Entrando en bloque de Administrador."); // Nuevo console.log
+                
+                // Funcionalidades exclusivas de administrador
+                addNavLink(sidebarNav, 'Agregar Categoría', null, '#addCategoriaModal'); // Modal
+                addDashboardCard(dashboardCards, 'Agregar Categoría', 'bi-tag', 'warning', null, '#addCategoriaModal'); // Modal
+
+                addNavLink(sidebarNav, 'Agregar Proveedor', null, '#addProveedorModal'); // Modal
+                addDashboardCard(dashboardCards, 'Agregar Proveedor', 'bi-truck', 'danger', null, '#addProveedorModal'); // Modal
+
+                addNavLink(sidebarNav, 'Agregar Producto', null, '#addProductModal'); // Modal
+                addDashboardCard(dashboardCards, 'Agregar Producto', 'bi-box', 'dark', null, '#addProductModal'); // Modal
+
+                addNavLink(sidebarNav, 'Registrar Factura Compra', '/facturas-compra-lista/'); // Direct link
+                addDashboardCard(dashboardCards, 'Registrar Factura Compra', 'bi-receipt', 'secondary', '/facturas-compra-lista/'); // Direct link
+
+                // Reportes de administrador
+                addNavLink(sidebarNav, 'Reporte de Inventario', null, '#inventoryReportModal', fetchReporteInventario); // Modal
+                addDashboardCard(dashboardCards, 'Reporte de Inventario', 'bi-graph-up', 'primary', null, '#inventoryReportModal', fetchReporteInventario); // Modal
+                addNavLink(sidebarNav, 'Reporte de Compras', null, '#reporteComprasModal'); // Modal
+                addNavLink(sidebarNav, 'Reporte de Compras', 'bi-graph-up-arrow', 'success', null, '#reporteComprasModal'); // Modal
+            } else if (isSeller) {
+                console.log("Cargando elementos de Vendedor"); // Debugging
+                addNavLink(sidebarNav, 'Registrar Venta', null, '#registerSaleModal'); // Modal
+                addDashboardCard(dashboardCards, 'Registrar Venta', 'bi-cart-plus', 'success', null, '#registerSaleModal'); // Modal
+                // Total ventas del día para vendedor
+                fetchVentasDia();
+            }
+
+            // Event listener for the daily sales card to open its modal
+            const dailySalesCard = document.getElementById('daily-sales-card');
+            if (dailySalesCard) {
+                dailySalesCard.setAttribute('data-bs-toggle', 'modal');
+                dailySalesCard.setAttribute('data-bs-target', '#ventasDiaModal');
+                dailySalesCard.addEventListener('click', loadVentasDiaDetails);
+            }
+
+            try {
+                // Cargar datos iniciales para modales disponibles
+                // loadProducts(); // Moved to product_display.html or related logic if it's a separate page
+                if (isAdmin) {
+                    await loadCategories(); // Para 'Add Product' category dropdown
+                    await loadProviders(); // Only load providers if isAdmin
+
+                    // Move purchaseProductSelects population here
+                    const purchaseProductSelects = document.querySelectorAll('.purchase-product-select');
+                    const productsRaw = localStorage.getItem('allProducts');
+                    const products = productsRaw ? JSON.parse(productsRaw) : [];
+
+                    purchaseProductSelects.forEach(select => {
+                        select.innerHTML = '<option value="">Selecciona un producto</option>';
+                        products.forEach(product => {
+                            const option = document.createElement('option');
+                            option.value = product.id;
+                            option.innerText = product.nombre;
+                            select.appendChild(option);
+                        });
+                    });
+
+                }
+            } catch (error) {
+                console.error('Error al cargar datos iniciales:', error);
+                alert('Error al cargar datos iniciales: ' + error.message);
+            }
+        }
+
+        function addNavLink(parent, text, targetHref = null, targetModalId = null, onClick = null) {
+            const li = document.createElement('li');
+            const a = document.createElement('a');
+            a.className = 'nav-link';
+            a.innerText = text;
+
+            if (targetHref) {
+                a.href = targetHref;
+            } else if (targetModalId) {
+                a.href = '#'; // Use '#' for JS-handled clicks
+                a.setAttribute('data-bs-toggle', 'modal');
+                a.setAttribute('data-bs-target', targetModalId);
+            } else {
+                a.href = '#'; // Fallback to '#' if no target specified
+            }
+
+            if (onClick) {
+                a.onclick = onClick;
+            }
+            li.appendChild(a);
+            parent.appendChild(li);
+        }
+
+        function addDashboardCard(parent, title, iconClass, colorClass, targetHref = null, targetModalId = null, onClick = null) {
+            const col = document.createElement('div');
+            col.className = 'col-md-4 mb-4';
+            const card = document.createElement('div');
+            card.className = `card text-white bg-${colorClass} dashboard-card`;
+
+            if (targetHref) {
+                card.onclick = () => { window.location.href = targetHref; };
+                card.style.cursor = 'pointer'; // Ensure cursor indicates clickability
+            } else if (targetModalId) {
+                card.setAttribute('data-bs-toggle', 'modal');
+                card.setAttribute('data-bs-target', targetModalId);
+            }
+
+            if (onClick) {
+                card.onclick = onClick;
+            }
+
+            card.innerHTML = `
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="card-title">${title}</h5>
+                        <i class="bi ${iconClass} card-icon"></i>
+                    </div>
+                </div>
+            `;
+            col.appendChild(card);
+            parent.appendChild(col);
+        }
+
+        // --- Data Loading Functions ---
+
+        async function loadProducts() {
+            console.log("loadProducts() called."); // Debugging line
+            try {
+                const responseData = await fetchAPI('productos/');
+                const products = responseData.results || []; // Acceder a la propiedad 'results'
+                localStorage.setItem('allProducts', JSON.stringify(products)); // Store products in localStorage
+                console.log("Productos cargados y almacenados en localStorage:", products); // Debugging line
+                const tableBody = document.getElementById('productos-table-body');
+                if (tableBody) {
+                    tableBody.innerHTML = '';
+                    products.forEach(product => {
+                        const row = tableBody.insertRow();
+                        row.insertCell().innerText = product.id;
+                        row.insertCell().innerText = product.nombre;
+                        row.insertCell().innerText = product.codigo_barras;
+                        row.insertCell().innerText = product.precio_compra;
+                        row.insertCell().innerText = product.porcentaje_ganancia;
+                        row.insertCell().innerText = product.precio_venta;
+                        row.insertCell().innerText = product.stock_actual;
+                        row.insertCell().innerText = product.stock_minimo;
+                        row.insertCell().innerText = product.categoria_nombre; // Assuming serializer provides this
+                        row.insertCell().innerText = product.proveedor_nombre; // Assuming serializer provides this
+                    });
+                }
+
+                // Populate product dropdowns for sale and purchase forms
+                const saleProductSelects = document.querySelectorAll('.sale-product-select');
+                console.log("Found sale product selects:", saleProductSelects.length); // Debugging line
+                const purchaseProductSelects = document.querySelectorAll('.purchase-product-select');
+                console.log("Found purchase product selects:", purchaseProductSelects.length); // Debugging line
+
+                saleProductSelects.forEach(select => {
+                    select.innerHTML = '<option value="">Selecciona un producto</option>';
+                    products.forEach(product => {
+                        const option = document.createElement('option');
+                        option.value = product.id;
+                        option.setAttribute('data-price', product.precio_venta);
+                        option.innerText = `${product.nombre} (Stock: ${product.stock_actual})`;
+                        select.appendChild(option);
+                        console.log(`Added product ${product.nombre} to sale select.`); // Debugging line
+                    });
+
+                    // Add event listener to update precio_unitario when product changes
+                    select.addEventListener('change', function() {
+                        const selectedOption = this.options[this.selectedIndex];
+                        const precioUnitarioInput = this.closest('.sale-detail-item').querySelector('.sale-precio-unitario-input');
+                        if (selectedOption && selectedOption.value) {
+                            const price = selectedOption.getAttribute('data-price');
+                            precioUnitarioInput.value = parseFloat(price).toFixed(2); // Set the price
+                        } else {
+                            precioUnitarioInput.value = ''; // Clear if no product selected
+                        }
+                    });
+                });
+
+                purchaseProductSelects.forEach(select => {
+                    select.innerHTML = '<option value="">Selecciona un producto</option>';
+                    products.forEach(product => {
+                        const option = document.createElement('option');
+                        option.value = product.id;
+                        option.innerText = product.nombre;
+                        select.appendChild(option);
+                        console.log(`Added product ${product.nombre} to purchase select.`); // Debugging line
+                    });
+                });
+
+            } catch (error) {
+                console.error('Error al cargar productos:', error);
+                alert('No se pudieron cargar los productos: ' + error.message);
+            }
+        }
+
+        async function loadCategories() {
+            try {
+                const responseData = await fetchAPI('categorias/');
+                const categories = responseData.results || [];
+                const select = document.getElementById('productCategoria');
+                select.innerHTML = '<option value="">Selecciona una categoría</option>';
+                categories.forEach(category => {
+                    const option = document.createElement('option');
+                    option.value = category.id;
+                    option.innerText = category.nombre;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error al cargar categorías:', error);
+                alert('No se pudieron cargar las categorías: ' + error.message);
+            }
+        }
+
+        async function loadProviders() {
+            try {
+                const responseData = await fetchAPI('proveedores/');
+                const providers = responseData.results || [];
+                const productSelect = document.getElementById('productProveedor');
+                productSelect.innerHTML = '<option value="">Selecciona un proveedor</option>';
+                providers.forEach(provider => {
+                    const option = document.createElement('option');
+                    option.value = provider.id;
+                    option.innerText = provider.nombre;
+                    productSelect.appendChild(option);
+                });
+
+                const purchaseSelect = document.getElementById('purchaseProveedor');
+                purchaseSelect.innerHTML = '<option value="">Selecciona un proveedor</option>';
+                providers.forEach(provider => {
+                    const option = document.createElement('option');
+                    option.value = provider.id;
+                    option.innerText = provider.nombre;
+                    purchaseSelect.appendChild(option);
+                });
+
+            } catch (error) {
+                console.error('Error al cargar proveedores:', error);
+                alert('No se pudieron cargar los proveedores: ' + error.message);
+            }
+        }
+
+        async function loadSales() {
+            try {
+                const responseData = await fetchAPI('ventas/');
+                const sales = responseData.results || [];
+                const tableBody = document.getElementById('ventas-table-body');
+                tableBody.innerHTML = '';
+                sales.forEach(sale => {
+                    const row = tableBody.insertRow();
+                    row.insertCell().innerText = sale.id;
+                    row.insertCell().innerText = new Date(sale.fecha_venta).toLocaleDateString();
+                    row.insertCell().innerText = sale.metodo_pago;
+                    row.insertCell().innerText = sale.vendedor;
+                    row.insertCell().innerText = parseFloat(sale.total).toFixed(2);
+                    
+                    const detailsCell = row.insertCell();
+                    const ul = document.createElement('ul');
+                    sale.detalles.forEach(detail => {
+                        const li = document.createElement('li');
+                        li.innerText = `${detail.producto_nombre} - Cantidad: ${detail.cantidad} - Precio Unit: ${parseFloat(detail.precio_unitario).toFixed(2)}`;
+                        ul.appendChild(li);
+                    });
+                    detailsCell.appendChild(ul);
+                });
+            } catch (error) {
+                console.error('Error al cargar ventas:', error);
+                alert('No se pudieron cargar las ventas: ' + error.message);
+            }
+        }
+        
+        async function fetchVentasDia() {
+            try {
+                const response = await fetchAPI('ventas/ventas_dia/');
+                console.log("Ventas del día:", response); // Debugging
+                const salesCard = document.getElementById('daily-sales-card');
+                if (salesCard) {
+                    salesCard.querySelector('.card-title').innerText = `Ventas del Día (${response.fecha})`;
+                    salesCard.querySelector('.card-text').innerHTML = `Total: $${parseFloat(response.total_ventas_dia).toFixed(2)}<br>Cantidad: ${response.cantidad_ventas_dia}`;
+                } else {
+                    // Create a new card if it doesn't exist
+                    const dashboardCards = document.getElementById('dashboard-cards');
+                    const col = document.createElement('div');
+                    col.className = 'col-md-4 mb-4';
+                    col.id = 'daily-sales-card';
+                    const card = document.createElement('div');
+                    card.className = `card text-white bg-primary dashboard-card`;
+                    card.innerHTML = `
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="card-title">Ventas del Día (${response.fecha})</h5>
+                                <i class="bi bi-currency-dollar card-icon"></i>
+                            </div>
+                            <p class="card-text">Total: $${parseFloat(response.total_ventas_dia).toFixed(2)}<br>Cantidad: ${response.cantidad_ventas_dia}</p>
+                        </div>
+                    `;
+                    col.appendChild(card);
+                    dashboardCards.prepend(col); // Add to the beginning
+                }
+            } catch (error) {
+                console.error('Error al obtener ventas del día:', error);
+                // Optionally display an error message on the card itself
+            }
+        }
+
+        async function fetchReporteCompras() {
+            try {
+                const mes = document.getElementById('reporteComprasMes').value;
+                const ano = document.getElementById('reporteComprasAno').value;
+                if (!mes || !ano) {
+                    alert('Por favor, ingresa el mes y el año para el reporte de compras.');
+                    return;
+                }
+
+                console.log(`Intentando obtener reporte de compras para Mes: ${mes}, Año: ${ano}`);
+                const response = await fetchAPI(`ventas/reporte_compras/?mes=${mes}&año=${ano}`);
+                console.log("Reporte de Compras recibido:", response);
+
+                const tableBody = document.getElementById('reporte-compras-table-body');
+                tableBody.innerHTML = '';
+                if (response.length > 0) {
+                    response.forEach(compra => {
+                        const row = tableBody.insertRow();
+                        row.insertCell().innerText = compra.id;
+                        row.insertCell().innerText = compra.numero_factura;
+                        row.insertCell().innerText = compra.proveedor_nombre;
+                        row.insertCell().innerText = new Date(compra.fecha_compra).toLocaleDateString();
+                        row.insertCell().innerText = parseFloat(compra.total).toFixed(2);
+
+                        const detailsCell = row.insertCell();
+                        const ul = document.createElement('ul');
+                        if (compra.detalles && compra.detalles.length > 0) {
+                            compra.detalles.forEach(detalle => {
+                                const li = document.createElement('li');
+                                li.innerText = `${detalle.producto_nombre} - Cantidad: ${detalle.cantidad} - Precio Unit: ${parseFloat(detalle.precio_unitario).toFixed(2)}`;
+                                ul.appendChild(li);
+                            });
+                        } else {
+                            const li = document.createElement('li');
+                            li.innerText = 'No hay detalles de productos.';
+                            ul.appendChild(li);
+                        }
+                        detailsCell.appendChild(ul);
+                    });
+                } else {
+                    tableBody.innerHTML = '<tr><td colspan="6">No hay facturas de compra para el mes y año seleccionados.</td></tr>';
+                }
+
+            } catch (error) {
+                console.error('Error al obtener el reporte de compras:', error);
+                alert('No se pudo cargar el reporte de compras: ' + error.message);
+            }
+        }
+
+        async function fetchReporteInventario() {
+            try {
+                console.log("Attempting to fetch inventory report...");
+                const report = await fetchAPI('ventas/reporte_inventario/');
+                console.log("Reporte de Inventario completo (data received):");
+                console.log(report); // Debugging the full report
+
+                // Populate Total Products and Total Value
+                const reportTotalProducts = document.getElementById('report-total-products');
+                const reportTotalValue = document.getElementById('report-total-value');
+                if (reportTotalProducts) reportTotalProducts.innerText = report.total_productos;
+                if (reportTotalValue) reportTotalValue.innerText = parseFloat(report.valor_total_inventario).toFixed(2);
+                console.log("Total products and total value populated.");
+
+                // Populate All Products Table
+                const allProductsBody = document.getElementById('report-all-products-body');
+                console.log("allProductsBody element:", allProductsBody);
+                if (allProductsBody) {
+                    allProductsBody.innerHTML = '';
+                    console.log("Cleared allProductsBody. Populating with items...");
+                    if (report.productos_list && report.productos_list.length > 0) {
+                        report.productos_list.forEach(item => {
+                            console.log("Processing all product item:", item);
+                            const row = allProductsBody.insertRow();
+                            row.insertCell().innerText = item.nombre;
+                            row.insertCell().innerText = item.categoria;
+                            row.insertCell().innerText = item.proveedor;
+                            row.insertCell().innerText = item.stock_actual;
+                            row.insertCell().innerText = item.stock_minimo;
+                            row.insertCell().innerText = parseFloat(item.precio_venta).toFixed(2);
+                            row.insertCell().innerText = (item.stock_actual * item.precio_venta).toFixed(2); // Valor Total Item
+                        });
+                    } else {
+                        allProductsBody.innerHTML = '<tr><td colspan="7">No hay productos en el inventario.</td></tr>';
+                    }
+                    console.log("Finished populating all products.");
+                }
+
+                // Populate Low Stock Table
+                const lowStockBody = document.getElementById('report-low-stock-body');
+                console.log("lowStockBody element:", lowStockBody);
+                if (lowStockBody) {
+                    lowStockBody.innerHTML = '';
+                    console.log("Cleared lowStockBody. Populating with low stock items...");
+                    if (report.productos_bajo_stock && report.productos_bajo_stock.length > 0) {
+                        report.productos_bajo_stock.forEach(item => {
+                            console.log("Processing low stock item:", item);
+                            const row = lowStockBody.insertRow();
+                            row.insertCell().innerText = item.nombre;
+                            row.insertCell().innerText = item.stock_actual;
+                            row.insertCell().innerText = item.stock_minimo;
+                        });
+                    } else {
+                        lowStockBody.innerHTML = '<tr><td colspan="3">No hay productos con stock bajo.</td></tr>';
+                    }
+                    console.log("Finished populating low stock products.");
+                }
+
+            } catch (error) {
+                console.error('Error al obtener el reporte de inventario:', error);
+                alert('No se pudo cargar el reporte de inventario: ' + error.message);
+            }
+        }
+
+        async function loadVentasDiaDetails() {
+            try {
+                console.log("Intentando cargar detalles de ventas del día...");
+                const response = await fetchAPI('ventas/ventas_dia/');
+                console.log("Detalles de Ventas del Día recibidos:", response);
+
+                document.getElementById('ventasDiaFecha').innerText = `Fecha: ${response.fecha}`;
+                document.getElementById('ventasDiaTotal').innerText = parseFloat(response.total_ventas_dia).toFixed(2);
+                document.getElementById('ventasDiaCantidad').innerText = response.cantidad_ventas_dia;
+
+                const tableBody = document.getElementById('ventas-dia-list-body');
+                tableBody.innerHTML = '';
+                if (response.ventas_del_dia && response.ventas_del_dia.length > 0) {
+                    response.ventas_del_dia.forEach(venta => {
+                        const row = tableBody.insertRow();
+                        row.insertCell().innerText = venta.id;
+                        row.insertCell().innerText = venta.metodo_pago;
+                        row.insertCell().innerText = venta.vendedor;
+                        row.insertCell().innerText = parseFloat(venta.total).toFixed(2);
+                    });
+                } else {
+                    tableBody.innerHTML = '<tr><td colspan="4">No hay ventas registradas para el día de hoy.</td></tr>';
+                }
+
+            } catch (error) {
+                console.error('Error al cargar detalles de ventas del día:', error);
+                alert('No se pudieron cargar los detalles de ventas del día: ' + error.message);
+            }
+        }
+
+        // Event Listeners for report forms
+        document.getElementById('reporteComprasForm').addEventListener('submit', async function(event) {
+            event.preventDefault();
+            await fetchReporteCompras();
+        });
+
+        // Event Listener for Register Purchase Form
+        document.getElementById('registerPurchaseForm').addEventListener('submit', async function(event) {
+            event.preventDefault();
+
+            const proveedor = document.getElementById('purchaseProveedor').value;
+            const numeroFactura = document.getElementById('purchaseNumeroFactura').value;
+            const fechaCompra = document.getElementById('purchaseFechaCompra').value;
+
+            const detalles = [];
+            document.querySelectorAll('.purchase-detail-item').forEach(item => {
+                const producto = item.querySelector('.purchase-product-select').value;
+                const cantidad = item.querySelector('.purchase-cantidad-input').value;
+                const precioUnitario = item.querySelector('.purchase-precio-unitario-input').value;
+
+                if (producto && cantidad && precioUnitario) {
+                    detalles.push({
+                        producto: parseInt(producto),
+                        cantidad: parseInt(cantidad),
+                        precio_unitario: parseFloat(precioUnitario)
+                    });
+                }
+            });
+
+            if (detalles.length === 0) {
+                alert('Debe agregar al menos un producto a la factura de compra.');
+                return;
+            }
+
+            const payload = {
+                proveedor: parseInt(proveedor),
+                numero_factura: numeroFactura,
+                fecha_compra: fechaCompra,
+                detalles: detalles
+            };
+
+            try {
+                console.log("Enviando factura de compra:", payload);
+                await fetchAPI('facturas-compra/', 'POST', payload);
+                alert('Factura de compra registrada exitosamente!');
+                document.getElementById('registerPurchaseForm').reset();
+                // Optionally, refresh a list of purchase invoices if displayed elsewhere
+                // For now, just close the modal
+                const registerPurchaseModal = bootstrap.Modal.getInstance(document.getElementById('registerPurchaseModal'));
+                if (registerPurchaseModal) {
+                    registerPurchaseModal.hide();
+                }
+            } catch (error) {
+                console.error('Error al registrar factura de compra:', error);
+                alert('Error al registrar factura de compra: ' + error.message);
+            }
+        });
+
+        // Add Product Detail for Purchase Invoice
+        document.getElementById('add-purchase-detail').addEventListener('click', function() {
+            const container = document.getElementById('purchase-details-container');
+            const newItem = document.createElement('div');
+            newItem.className = 'row mb-2 purchase-detail-item';
+            newItem.innerHTML = `
+                <div class="col-md-4">
+                    <label class="form-label">Producto</label>
+                    <div class="input-group">
+                        <select class="form-select purchase-product-select" required>
+                            <!-- Options populated by JS -->
+                        </select>
+                        <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#addProductModal" title="Agregar Nuevo Producto">
+                            <i class="bi bi-plus-lg"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Cantidad</label>
+                    <input type="number" class="form-control purchase-cantidad-input" min="1" value="1" required>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Precio Unitario</label>
+                    <input type="number" step="0.01" class="form-control purchase-precio-unitario-input" required>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="button" class="btn btn-danger w-100 remove-purchase-detail">X</button>
+                </div>
+            `;
+            container.appendChild(newItem);
+            // Re-populate product select options for the new item
+            const newSelect = newItem.querySelector('.purchase-product-select');
+            const productsRaw = localStorage.getItem('allProducts');
+            const products = productsRaw ? JSON.parse(productsRaw) : [];
+            newSelect.innerHTML = '<option value="">Selecciona un producto</option>';
+            products.forEach(product => {
+                const option = document.createElement('option');
+                option.value = product.id;
+                option.innerText = product.nombre;
+                newSelect.appendChild(option);
+            });
+        });
+
+        // Remove Product Detail for Purchase Invoice
+        document.addEventListener('click', function(event) {
+            if (event.target.classList.contains('remove-purchase-detail')) {
+                event.target.closest('.purchase-detail-item').remove();
+            }
+        });
+
+        // Add Product Detail for Sale
+        document.getElementById('add-sale-detail').addEventListener('click', function() {
+            const container = document.getElementById('sale-details-container');
+            const newItem = document.createElement('div');
+            newItem.className = 'row mb-2 sale-detail-item';
+            newItem.innerHTML = `
+                <div class="col-md-5">
+                    <label class="form-label">Producto</label>
+                    <select class="form-select sale-product-select" required>
+                        <!-- Options populated by JS -->
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Cantidad</label>
+                    <input type="number" class="form-control sale-cantidad-input" min="1" value="1" required>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Precio Unitario</label>
+                    <input type="number" step="0.01" class="form-control sale-precio-unitario-input" readonly required>
+                </div>
+                <div class="col-md-1 d-flex align-items-end">
+                    <button type="button" class="btn btn-danger remove-sale-detail">X</button>
+                </div>
+            `;
+            container.appendChild(newItem);
+            // Re-populate product select options for the new item
+            const newSelect = newItem.querySelector('.sale-product-select');
+            const productsRaw = localStorage.getItem('allProducts');
+            const products = productsRaw ? JSON.parse(productsRaw) : [];
+            newSelect.innerHTML = '<option value="">Selecciona un producto</option>';
+            products.forEach(product => {
+                const option = document.createElement('option');
+                option.value = product.id;
+                option.setAttribute('data-price', product.precio_venta);
+                option.innerText = `${product.nombre} (Stock: ${product.stock_actual})`;
+                newSelect.appendChild(option);
+            });
+            // Add event listener to update precio_unitario when product changes for the new item
+            newSelect.addEventListener('change', function() {
+                const selectedOption = this.options[this.selectedIndex];
+                const precioUnitarioInput = this.closest('.sale-detail-item').querySelector('.sale-precio-unitario-input');
+                if (selectedOption && selectedOption.value) {
+                    const price = selectedOption.getAttribute('data-price');
+                    precioUnitarioInput.value = parseFloat(price).toFixed(2); // Set the price
+                } else {
+                    precioUnitarioInput.value = ''; // Clear if no product selected
+                }
+            });
+        });
+
+        // Remove Product Detail for Sale
+        document.addEventListener('click', function(event) {
+            if (event.target.classList.contains('remove-sale-detail')) {
+                event.target.closest('.sale-detail-item').remove();
+            }
+        });
+
+        // Event Listener for Register Sale Form
+        document.getElementById('registerSaleForm').addEventListener('submit', async function(event) {
+            event.preventDefault();
+
+            const saleDate = document.getElementById('saleDate').value;
+            const metodoPago = document.getElementById('saleMetodoPago').value;
+            const vendedor = document.getElementById('saleVendedor').value; // Assuming this is set or derived
+
+            const detalles = [];
+            document.querySelectorAll('.sale-detail-item').forEach(item => {
+                const producto = item.querySelector('.sale-product-select').value;
+                const cantidad = item.querySelector('.sale-cantidad-input').value;
+                const precioUnitario = item.querySelector('.sale-precio-unitario-input').value; // Get the displayed unit price
+
+                if (producto && cantidad && precioUnitario) {
+                    detalles.push({
+                        producto: parseInt(producto),
+                        cantidad: parseInt(cantidad),
+                        precio_unitario: parseFloat(precioUnitario) // Use the displayed unit price
+                    });
+                }
+            });
+
+            if (detalles.length === 0) {
+                alert('Debe agregar al menos un producto a la venta.');
+                return;
+            }
+
+            const payload = {
+                fecha_venta: saleDate,
+                metodo_pago: metodoPago,
+                vendedor: vendedor,
+                detalles: detalles
+            };
+
+            const csrfToken = getCookie('csrftoken');
+            console.log('CSRF Token being sent for sales:', csrfToken); // Debugging line
+
+            try {
+                console.log("Enviando venta:", payload);
+                await fetchAPI('ventas/', 'POST', payload);
+                alert('Venta registrada exitosamente!');
+                document.getElementById('registerSaleForm').reset();
+                const registerSaleModal = bootstrap.Modal.getInstance(document.getElementById('registerSaleModal'));
+                if (registerSaleModal) {
+                    registerSaleModal.hide();
+                }
+                fetchVentasDia(); // Refresh daily sales count if applicable
+            } catch (error) {
+                console.error('Error al registrar venta:', error);
+                alert('Error al registrar venta: ' + error.message);
+            }
+        });
+
+        // Event Listener for Add Category Form
+        document.getElementById('addCategoriaForm').addEventListener('submit', async function(event) {
+            event.preventDefault();
+
+            const nombre = document.getElementById('categoriaNombre').value;
+            const descripcion = document.getElementById('categoriaDescripcion').value;
+
+            const payload = {
+                nombre: nombre,
+                descripcion: descripcion
+            };
+
+            try {
+                console.log("Enviando categoría:", payload);
+                await fetchAPI('categorias/', 'POST', payload);
+                alert('Categoría guardada exitosamente!');
+                document.getElementById('addCategoriaForm').reset();
+                const addCategoriaModal = bootstrap.Modal.getInstance(document.getElementById('addCategoriaModal'));
+                if (addCategoriaModal) {
+                    addCategoriaModal.hide();
+                }
+                loadCategories(); // Refresh categories dropdowns if needed
+            } catch (error) {
+                console.error('Error al guardar categoría:', error);
+                alert('Error al guardar categoría: ' + error.message);
+            }
+        });
+
+        // Event Listener for Add Proveedor Form
+        document.getElementById('addProveedorForm').addEventListener('submit', async function(event) {
+            event.preventDefault();
+
+            const nombre = document.getElementById('proveedorNombre').value;
+            const nit = document.getElementById('proveedorNit').value;
+            const telefono = document.getElementById('proveedorTelefono').value;
+            const direccion = document.getElementById('proveedorDireccion').value;
+            const email = document.getElementById('proveedorEmail').value;
+
+            const payload = {
+                nombre: nombre,
+                nit: nit,
+                telefono: telefono,
+                direccion: direccion,
+                email: email
+            };
+
+            try {
+                console.log("Enviando proveedor:", payload);
+                await fetchAPI('proveedores/', 'POST', payload);
+                alert('Proveedor guardado exitosamente!');
+                document.getElementById('addProveedorForm').reset();
+                const addProveedorModal = bootstrap.Modal.getInstance(document.getElementById('addProveedorModal'));
+                if (addProveedorModal) {
+                    addProveedorModal.hide();
+                }
+                loadProviders(); // Refresh providers dropdowns if needed
+            } catch (error) {
+                console.error('Error al guardar proveedor:', error);
+                alert('Error al guardar proveedor: ' + error.message);
+            }
+        });
+
+        // Event Listener for Add Product Form
+        document.getElementById('addProductForm').addEventListener('submit', async function(event) {
+            event.preventDefault();
+
+            const nombre = document.getElementById('productNombre').value;
+            const descripcion = document.getElementById('productDescripcion').value;
+            const codigoBarras = document.getElementById('productCodigoBarras').value;
+            const precioCompra = document.getElementById('productPrecioCompra').value;
+            const porcentajeGanancia = document.getElementById('productPorcentajeGanancia').value;
+            const stockActual = document.getElementById('productStockActual').value;
+            const stockMinimo = document.getElementById('productStockMinimo').value;
+            const categoria = document.getElementById('productCategoria').value;
+            const proveedor = document.getElementById('productProveedor').value;
+
+            const payload = {
+                nombre: nombre,
+                descripcion: descripcion,
+                codigo_barras: codigoBarras,
+                precio_compra: parseFloat(precioCompra),
+                porcentaje_ganancia: parseFloat(porcentajeGanancia),
+                stock_actual: parseInt(stockActual),
+                stock_minimo: parseInt(stockMinimo),
+                categoria: parseInt(categoria),
+                proveedor: parseInt(proveedor)
+            };
+
+            try {
+                console.log("Enviando producto:", payload);
+                await fetchAPI('productos/', 'POST', payload);
+                alert('Producto guardado exitosamente!');
+                document.getElementById('addProductForm').reset();
+                const addProductModal = bootstrap.Modal.getInstance(document.getElementById('addProductModal'));
+                if (addProductModal) {
+                    addProductModal.hide();
+                }
+                loadProducts(); // Refresh products list and dropdowns
+            } catch (error) {
+                console.error('Error al guardar producto:', error);
+                alert('Error al guardar producto: ' + error.message);
+            }
+        });
+
+        // --- Initial Load ---
+        loadDashboardData();
+
+        // Attach event listeners for modals that trigger data loads
+        // No need to attach for 'Ver Productos' or 'Ver Ventas' as they now navigate to new pages
+        // document.getElementById('verProductosModal').addEventListener('show.bs.modal', loadProducts);
+        // document.getElementById('viewSalesModal').addEventListener('show.bs.modal', loadSales);
+        document.getElementById('inventoryReportModal').addEventListener('show.bs.modal', fetchReporteInventario);
+        document.getElementById('reporteComprasModal').addEventListener('show.bs.modal', fetchReporteCompras);
+        document.getElementById('ventasDiaModal').addEventListener('show.bs.modal', loadVentasDiaDetails);
+
+        // Attach event listener for Register Sale Modal to load products
+        document.getElementById('registerSaleModal').addEventListener('show.bs.modal', loadProducts);
+
+    </script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+</body>
+</html>
