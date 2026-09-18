@@ -191,7 +191,7 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const supplierList = document.getElementById('supplier-list');
-            const apiURL = 'http://127.0.0.1:8000/api/proveedores/'; // URL de tu API de proveedores
+            const apiURL = '/core-api/proveedores/'; // URL de tu API de proveedores
             const addSupplierForm = document.getElementById('addSupplierForm');
             const formMessage = document.getElementById('form-message');
 
@@ -269,5 +269,7 @@
             });
         });
     </script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    {% include "includes/inbotf_chatbot.html" %}
 </body>
 </html> 

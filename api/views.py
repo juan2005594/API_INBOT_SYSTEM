@@ -27,9 +27,11 @@ from .utils.reports import (
     generar_reporte_compras
 )
 from rest_framework.views import APIView
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.authtoken.models import Token
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.contrib.auth import authenticate
 from .permissions import IsAdminOrWarehouse, IsSeller
 from django.db.utils import IntegrityError, DatabaseError
@@ -71,6 +73,13 @@ class CategoriaViewSet(viewsets.ModelViewSet):
     queryset = Categoria.objects.all()
     serializer_class = CategoriaSerializer
 
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve']:
+            self.permission_classes = [AllowAny]
+        else:
+            self.permission_classes = [IsAdminOrWarehouse]
+        return [permission() for permission in self.permission_classes]
+
 class ProveedorViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAdminOrWarehouse]
     # ViewSet para la gestión de proveedores.
@@ -99,12 +108,21 @@ class ProveedorViewSet(viewsets.ModelViewSet):
     queryset = Proveedor.objects.all()
     serializer_class = ProveedorSerializer
 
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve']:
+            self.permission_classes = [AllowAny]
+        else:
+            self.permission_classes = [IsAdminOrWarehouse]
+        return [permission() for permission in self.permission_classes]
+
 class ProductoViewSet(viewsets.ModelViewSet):
     queryset = Producto.objects.all()
     serializer_class = ProductoSerializer
 
     def get_permissions(self):
-        if self.action in ['list', 'retrieve', 'stock_bajo', 'buscar_codigo']:
+        if self.action in ['list', 'retrieve']:
+            self.permission_classes = [AllowAny]
+        elif self.action in ['stock_bajo', 'buscar_codigo']:
             self.permission_classes = [IsAdminOrWarehouse | IsSeller]
         else:
             self.permission_classes = [IsAdminOrWarehouse]
@@ -173,11 +191,83 @@ class FacturaCompraViewSet(viewsets.ModelViewSet):
     queryset = FacturaCompra.objects.all()
     serializer_class = FacturaCompraSerializer
 
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve']:
+            self.permission_classes = [AllowAny]
+        else:
+            self.permission_classes = [IsAdminOrWarehouse]
+        return [permission() for permission in self.permission_classes]
+
     def create(self, request, *args, **kwargs):
         # Lógica personalizada para crear una factura de compra y sus detalles.
-        # Valida los detalles y actualiza el stock del producto al crear un detalle de factura.
-        data = request.data.copy() # Crear una copia mutable de request.data
+        # Permite crear productos nuevos desde la factura
+        data = request.data.copy()
         detalles_data = data.pop('detalles', [])
+        porcentaje_ganancia_global = data.pop('porcentaje_ganancia_global', None)
+        
+        print(f"DEBUG: FacturaCompra create - porcentaje_ganancia_global: {porcentaje_ganancia_global}")
+        
+        # Procesar productos nuevos si se proporcionan
+        nuevos_productos_ids = []
+        
+        for detalle in detalles_data:
+            # Si hay datos para crear un producto nuevo
+            if 'producto_nuevo' in detalle and detalle.get('producto_nuevo'):
+                try:
+                    from api.models import Categoria
+                    
+                    # Obtener datos del producto nuevo
+                    codigo_barras = detalle.get('codigo_barras', '')
+                    nombre = detalle.get('nombre', '')
+                    descripcion = detalle.get('descripcion', 'Sin descripción')
+                    categoria_id = detalle.get('categoria_id')
+                    proveedor_id = data.get('proveedor')
+                    
+                    # Usar porcentaje_ganancia del detalle o el global
+                    porcentaje = detalle.get('porcentaje_ganancia', porcentaje_ganancia_global or 30)
+                    
+                    print(f"DEBUG: Creando producto nuevo: {nombre}, Cat: {categoria_id}")
+                    
+                    # Obtener o crear categoría
+                    if categoria_id:
+                        categoria = Categoria.objects.get(id=categoria_id)
+                    else:
+                        # Crear categoría por defecto
+                        categoria, _ = Categoria.objects.get_or_create(
+                            nombre='General',
+                            defaults={'descripcion': 'Categoría general'}
+                        )
+                    
+                    # Crear el nuevo producto
+                    from api.models import Producto, Proveedor
+                    proveedor = Proveedor.objects.get(id=proveedor_id)
+                    
+                    nuevo_producto = Producto.objects.create(
+                        codigo_barras=codigo_barras or f'NUEVO_{nombre.upper()[:10]}',
+                        nombre=nombre,
+                        descripcion=descripcion,
+                        categoria=categoria,
+                        proveedor=proveedor,
+                        precio_compra=detalle.get('precio_unitario', 0),
+                        porcentaje_ganancia=Decimal(str(porcentaje)),
+                        stock_minimo=5,
+                        stock_actual=0  # Se actualizará al crear el detalle
+                    )
+                    
+                    # Reemplazar el producto_nuevo con el ID del producto creado
+                    detalle['producto'] = nuevo_producto.id
+                    detalle.pop('producto_nuevo', None)
+                    detalle.pop('codigo_barras', None)
+                    detalle.pop('nombre', None)
+                    detalle.pop('descripcion', None)
+                    detalle.pop('categoria_id', None)
+                    detalle.pop('porcentaje_ganancia', None)
+                    
+                    print(f"DEBUG: Producto creado con ID: {nuevo_producto.id}")
+                except Exception as e:
+                    print(f"DEBUG: Error creando producto nuevo: {e}")
+                    return Response({'error': f'Error al crear producto: {str(e)}'}, 
+                                  status=status.HTTP_400_BAD_REQUEST)
         
         # Validar detalles de la factura
         es_valido, mensaje = validar_factura_compra(detalles_data)
@@ -238,6 +328,13 @@ class VentaViewSet(viewsets.ModelViewSet):
     queryset = Venta.objects.all()
     serializer_class = VentaSerializer
 
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve']:
+            self.permission_classes = [AllowAny]
+        else:
+            self.permission_classes = [IsSeller | IsAdminOrWarehouse]
+        return [permission() for permission in self.permission_classes]
+
     def create(self, request, *args, **kwargs):
         print(f"DEBUG: VentaViewSet.create - Datos recibidos: {request.data}")
         try:
@@ -293,17 +390,27 @@ class VentaViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def ventas_dia(self, request):
         hoy = timezone.localdate()
-        ventas_hoy = Venta.objects.filter(fecha_venta__date=hoy)
-        
+        ventas_hoy = Venta.objects.filter(fecha_venta__date=hoy).order_by('-fecha_venta')
+
         total_ventas_dia = ventas_hoy.aggregate(Sum('total'))['total__sum'] or 0
         cantidad_ventas_dia = ventas_hoy.count()
 
         return Response({
             'fecha': hoy.strftime('%Y-%m-%d'),
             'total_ventas_dia': float(total_ventas_dia),
-            'cantidad_ventas_dia': cantidad_ventas_dia
+            'cantidad_ventas_dia': cantidad_ventas_dia,
+            'ventas_del_dia': [
+                {
+                    'id': venta.id,
+                    'metodo_pago': venta.metodo_pago,
+                    'vendedor': venta.vendedor,
+                    'total': float(venta.total or 0),
+                }
+                for venta in ventas_hoy
+            ],
         })
 
+@method_decorator(csrf_exempt, name='dispatch')
 class LoginView(APIView):
     permission_classes = []  # No requiere permisos para el login
     authentication_classes = []  # No requiere autenticación para el login

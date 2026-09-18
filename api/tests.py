@@ -1,12 +1,52 @@
-from django.test import TestCase
+AYUDAMEfrom django.test import TestCase
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
-from .models import Categoria, Proveedor, Producto, FacturaCompra, Venta, DetalleFacturaCompra, DetalleVenta
+from .models import Categoria, Proveedor, Producto, FacturaCompra, Venta, DetalleFacturaCompra, DetalleVenta, Cliente
 from django.contrib.auth.models import User
 from decimal import Decimal
 
 # Create your tests here.
+
+class ProductoModelTest(TestCase):
+    def setUp(self):
+        self.categoria = Categoria.objects.create(nombre="Electrónicos")
+        self.proveedor = Proveedor.objects.create(
+            nombre="Proveedor Test",
+            direccion="Dirección Test",
+            telefono="1234567890",
+            email="test@test.com"
+        )
+        self.producto = Producto.objects.create(
+            nombre="Producto Test",
+            descripcion="Descripción Test",
+            precio_venta=Decimal('100.00'),
+            stock_actual=10,
+            stock_minimo=5,
+            categoria=self.categoria,
+            proveedor=self.proveedor
+        )
+
+    def test_producto_creation(self):
+        self.assertEqual(self.producto.nombre, "Producto Test")
+        self.assertEqual(self.producto.precio_venta, Decimal('100.00'))
+        self.assertEqual(self.producto.stock_actual, 10)
+
+    def test_producto_str(self):
+        self.assertEqual(str(self.producto), "Producto Test")
+
+class VentaModelTest(TestCase):
+    def setUp(self):
+        self.venta = Venta.objects.create(
+            fecha_venta="2024-03-20",
+            metodo_pago="Efectivo",
+            vendedor="Test Vendedor",
+            total=Decimal('100.00')
+        )
+
+    def test_venta_creation(self):
+        self.assertEqual(self.venta.total, Decimal('100.00'))
+        self.assertEqual(self.venta.metodo_pago, "Efectivo")
 
 class APITest(APITestCase):
 
@@ -146,3 +186,112 @@ class APITest(APITestCase):
         self.producto2.refresh_from_db()
         self.assertEqual(self.producto.stock_actual, initial_stock_prod1 - 5)
         self.assertEqual(self.producto2.stock_actual, initial_stock_prod2 - 2)
+
+    def test_listar_productos(self):
+        url = reverse('producto-list')
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 2)
+
+    def test_crear_producto(self):
+        url = reverse('producto-list')
+        data = {
+            'nombre': 'Nuevo Producto',
+            'descripcion': 'Nueva Descripción',
+            'precio_venta': '150.00',
+            'stock_actual': 15,
+            'stock_minimo': 5,
+            'categoria': self.categoria.id,
+            'proveedor': self.proveedor.id
+        }
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(Producto.objects.count(), 3)
+
+    def test_crear_venta(self):
+        url = reverse('venta-list')
+        data = {
+            'fecha_venta': '2024-03-20',
+            'metodo_pago': 'Efectivo',
+            'vendedor': 'Test Vendedor',
+            'detalles': [
+                {
+                    'producto': self.producto.id,
+                    'cantidad': 2,
+                    'precio_unitario': '100.00'
+                }
+            ]
+        }
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(Venta.objects.count(), 1)
+        self.assertEqual(DetalleVenta.objects.count(), 1)
+
+    def test_validar_stock(self):
+        url = reverse('venta-list')
+        data = {
+            'fecha_venta': '2024-03-20',
+            'metodo_pago': 'Efectivo',
+            'vendedor': 'Test Vendedor',
+            'detalles': [
+                {
+                    'producto': self.producto.id,
+                    'cantidad': 15,  # Más que el stock disponible
+                    'precio_unitario': '100.00'
+                }
+            ]
+        }
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_crear_usuario(self):
+        url = reverse('user-list')  # Ajusta el nombre del endpoint según tu configuración
+        data = {
+            'username': 'nuevo_usuario',
+            'email': 'nuevo@correo.com',
+            'password': 'contraseña_segura'
+        }
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(User.objects.filter(username='nuevo_usuario').exists())
+
+    def test_generar_reporte_ventas(self):
+        url = reverse('reporte-ventas')  
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+       
+        self.assertIn('total_ventas', response.data)
+        self.assertIsInstance(response.data['total_ventas'], (int, float))
+
+class AutenticacionUsuarioTest(APITestCase):
+    def setUp(self):
+        self.username = 'usuario_test'
+        self.password = 'contraseña_segura'
+        self.user = User.objects.create_user(username=self.username, password=self.password)
+
+    def test_autenticacion_usuario(self):
+        url = reverse('login')  # Ajusta el nombre del endpoint según tu configuración
+        data = {
+            'username': self.username,
+            'password': self.password
+        }
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('token', response.data)
+
+class ClienteAPITest(APITestCase):
+    def setUp(self):
+        # Si tu modelo Cliente requiere campos adicionales, agrégalos aquí
+        pass
+
+    def test_crear_cliente(self):
+        url = reverse('cliente-list')  # Ajusta el nombre del endpoint si es diferente
+        data = {
+            'nombre': 'Cliente Prueba',
+            'email': 'cliente@prueba.com',
+            'telefono': '1234567890'
+            # Agrega otros campos requeridos por tu modelo Cliente
+        }
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(Cliente.objects.filter(nombre='Cliente Prueba').exists())

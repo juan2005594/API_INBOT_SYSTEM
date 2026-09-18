@@ -1,0 +1,87 @@
+╔════════════════════════════════════════════════════════════════╗
+║    CAMBIOS EN EL SISTEMA DE REGISTRO DE FACTURAS DE COMPRA     ║
+╚════════════════════════════════════════════════════════════════╝
+
+✅ FUNCIONALIDADES AGREGADAS:
+
+1. ✅ CAMPO DE PORCENTAJE DE GANANCIA GLOBAL
+   - Se agregó un campo en el formulario de factura
+   - Por defecto: 30%
+   - Se aplica automáticamente a TODOS los productos nuevos
+   
+2. ✅ OPCIÓN "PRODUCTO NUEVO" EN CADA FILA
+   - Cada fila de detalle ahora tiene dos opciones:
+     * Producto Existente (busca en la base de datos)
+     * Producto Nuevo (crea un producto nuevo)
+   
+3. ✅ CAMPOS PARA PRODUCTOS NUEVOS:
+   - Código de Barras
+   - Nombre del Producto
+   - Descripción
+   - Categoría (selector de categorías existentes)
+   - Cantidad
+   - Precio de Compra Unitario
+   
+4. ✅ CÁLCULO AUTOMÁTICO:
+   - El precio de venta se calcula automáticamente
+   - Fórmula: precio_compra * (1 + porcentaje_ganancia / 100)
+   - El stock se actualiza automáticamente con la cantidad de la factura
+   
+5. ✅ FUNCIONAMIENTO:
+   - Al registrar una factura con productos nuevos:
+     * Se crean los productos automáticamente
+     * Se aplica el porcentaje de ganancia global
+     * Se actualiza el stock
+     * Se crea la factura y sus detalles
+
+════════════════════════════════════════════════════════════════
+📋 CÓMO USAR LA NUEVA FUNCIONALIDAD
+════════════════════════════════════════════════════════════════
+
+PASO 1: Ir a http://127.0.0.1:8000/facturas-compra-lista/
+
+PASO 2: Llenar los campos básicos:
+   - Número de Factura
+   - Proveedor
+   - Fecha de Compra
+   - Porcentaje de Ganancia Global (opcional, por defecto 30%)
+
+PASO 3: Para cada producto en la factura:
+   a) Seleccionar "Producto Existente" O "Producto Nuevo"
+   
+   b) Si es "Producto Existente":
+      - Seleccionar de la lista desplegable
+      - Ingresar cantidad
+      - Ingresar precio unitario
+   
+   c) Si es "Producto Nuevo":
+      - Ingresar código de barras (opcional)
+      - Ingresar nombre del producto
+      - Ingresar descripción (opcional)
+      - Seleccionar categoría
+      - Ingresar cantidad
+      - Ingresar precio de compra unitario
+      - El precio de venta se calculará automáticamente
+
+PASO 4: Hacer clic en "Registrar Factura"
+
+════════════════════════════════════════════════════════════════
+💡 VENTAJAS
+════════════════════════════════════════════════════════════════
+
+✅ No necesitas crear productos antes de registrar la factura
+✅ Aplicas el mismo porcentaje de ganancia a todos los productos nuevos
+✅ El sistema calcula automáticamente el precio de venta
+✅ El stock se actualiza automáticamente
+✅ Todo se hace en un solo formulario
+
+════════════════════════════════════════════════════════════════
+🔧 ARCHIVOS MODIFICADOS
+════════════════════════════════════════════════════════════════
+
+1. api/views.py - Método create de FacturaCompraViewSet
+2. api/serializers.py - Agregado campo porcentaje_ganancia_global
+3. templates/purchase_invoice_list.html - Interfaz completa
+
+════════════════════════════════════════════════════════════════
+

@@ -1,0 +1,63 @@
+╔════════════════════════════════════════════════════════════╗
+║              RESUMEN DE DATOS EN LA BASE                    ║
+╚════════════════════════════════════════════════════════════╝
+
+✅ CONEXIÓN A BASE DE DATOS: SQL SERVER
+Nombre de Base de Datos: inbotf_system
+Servidor: ING_SANCHEZ
+
+📊 DATOS EXISTENTES:
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 CATEGORÍAS: 8 registros
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• ASEO
+• Y más categorías...
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🏢 PROVEEDORES: 5 registros
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Jabones (NIT: 1234567)
+• Y 4 proveedores más...
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📦 PRODUCTOS: 10 registros
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. jabon apol (Stock: 24 unidades)
+2. vaso (Stock: 24 unidades)
+3. perro (Stock: 23 unidades)
+4. copa (Stock: 25 unidades)
+5. copa 3.5 (Stock: 50 unidades)
+... y 5 productos más
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+💰 VENTAS: 8 registros
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• 8 ventas registradas en el sistema
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🧾 FACTURAS DE COMPRA: 0 registros
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• No hay facturas de compra aún
+
+════════════════════════════════════════════════════════════
+🌐 ENLACES PARA VER LOS DATOS
+════════════════════════════════════════════════════════════
+
+📄 API JSON:
+• Productos: http://127.0.0.1:8000/core-api/productos/
+• Proveedores: http://127.0.0.1:8000/core-api/proveedores/
+• Categorías: http://127.0.0.1:8000/core-api/categorias/
+• Ventas: http://127.0.0.1:8000/core-api/ventas/
+
+🔑 CREDENCIALES:
+• Usuario: vendedor
+• Contraseña: vendedor123
+
+════════════════════════════════════════════════════════════
+✅ SERVIDOR CORRIENDO
+════════════════════════════════════════════════════════════
+URL: http://127.0.0.1:8000/
+Base de datos: SQL Server (inbotf_system)
+Estado: ✅ Funcionando correctamente
+

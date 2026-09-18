@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -25,6 +26,26 @@
             text-align: center;
             margin-bottom: 30px;
             font-size: 2.2em;
+        }
+        .page-logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 14px;
+            margin: 10px auto 20px;
+        }
+        .page-logo img {
+            width: 56px;
+            height: 56px;
+            object-fit: contain;
+            border-radius: 8px;
+            background-color: #f0f2f5;
+        }
+        .page-logo-fallback {
+            display: none;
+            font-weight: bold;
+            color: #4CAF50;
+            letter-spacing: 0.5px;
         }
         .sale-table {
             width: 100%;
@@ -194,6 +215,14 @@
 </head>
 <body>
     <div class="container">
+        <div class="page-logo">
+            <img
+                src="{% static 'images/logo.png' %}"
+                alt="Logo"
+                onerror="this.style.display='none';var el=document.getElementById('page-logo-fallback'); if(el) el.style.display='block';"
+            />
+            <span id="page-logo-fallback" class="page-logo-fallback">LOGO</span>
+        </div>
         <h1>Ventas Realizadas</h1>
 
         <div class="form-section">
@@ -232,7 +261,8 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const salesContainer = document.getElementById('sales-container');
-            const apiURL = 'http://127.0.0.1:8000/api/ventas/'; // URL de tu API de ventas
+            const apiBaseURL = '/core-api/ventas/'; // URL base para POST (crear venta)
+            const listUrl = '/core-api/ventas/?page=1&ordering=-id'; // URL para GET (ventas más recientes)
             const addSaleForm = document.getElementById('addSaleForm');
             const formMessage = document.getElementById('form-message');
             const detailsContainer = document.getElementById('details-container');
@@ -243,8 +273,27 @@
             // Función para cargar productos
             async function loadProducts() {
                 try {
-                    const productsResponse = await fetch('http://127.0.0.1:8000/api/productos/');
-                    products = (await productsResponse.json()).results || [];
+                    // Cargar TODOS los productos (todas las páginas)
+                    products = [];
+                    let nextUrl = '/core-api/productos/';
+                    
+                    let page = 1;
+                    while (true) {
+                        const productsResponse = await fetch(`/core-api/productos/?page=${page}&format=json`);
+                        const data = await productsResponse.json();
+                        
+                        if (data.results && data.results.length > 0) {
+                            products = products.concat(data.results);
+                        }
+                        
+                        if (!data.next) {
+                            break;
+                        }
+                        page++;
+                    }
+                    
+                    console.log(`Productos cargados: ${products.length}`);
+                    
                     // Añadir una fila de detalle inicial
                     addDetailRow();
                 } catch (error) {
@@ -314,7 +363,7 @@
             // Función para cargar ventas
             async function loadSales() {
                 try {
-                    const response = await fetch(apiURL);
+                    const response = await fetch(listUrl);
                     if (!response.ok) {
                         throw new Error(`HTTP error! status: ${response.status}`);
                     }
@@ -387,7 +436,7 @@
                 };
 
                 try {
-                    const response = await fetch(apiURL, {
+                    const response = await fetch(apiBaseURL, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -422,5 +471,7 @@
             loadSales();
         });
     </script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    {% include "includes/inbotf_chatbot.html" %}
 </body>
 </html> 

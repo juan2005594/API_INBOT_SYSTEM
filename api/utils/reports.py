@@ -1,12 +1,25 @@
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from decimal import Decimal
-from typing import Dict, List
+from typing import Dict, List, Union
 from django.db.models import Sum, Count, F, Q
 from django.utils import timezone
 
 from ..models import Producto, Venta, DetalleVenta, FacturaCompra
 
-def generar_reporte_ventas_diario(fecha: datetime = None) -> Dict:
+
+def _coerce_report_date(fecha: Union[None, str, date, datetime]) -> date:
+    if fecha is None:
+        return timezone.localdate()
+    if isinstance(fecha, datetime):
+        return timezone.localdate(fecha) if timezone.is_aware(fecha) else fecha.date()
+    if isinstance(fecha, date):
+        return fecha
+    if isinstance(fecha, str):
+        return datetime.strptime(fecha.strip(), '%Y-%m-%d').date()
+    raise ValueError('Formato de fecha inválido. Use YYYY-MM-DD.')
+
+
+def generar_reporte_ventas_diario(fecha: Union[None, str, date, datetime] = None) -> Dict:
     """
     Genera un reporte de ventas del día especificado.
     
@@ -16,9 +29,8 @@ def generar_reporte_ventas_diario(fecha: datetime = None) -> Dict:
     Returns:
         Dict: Datos del reporte
     """
-    if fecha is None:
-        fecha = timezone.now().date()
-    
+    fecha = _coerce_report_date(fecha)
+
     ventas = Venta.objects.filter(fecha_venta__date=fecha)
     total_ventas = ventas.aggregate(total=Sum('total'))['total'] or Decimal('0')
     cantidad_ventas = ventas.count()

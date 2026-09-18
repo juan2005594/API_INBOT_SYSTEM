@@ -40,7 +40,7 @@ class DetalleFacturaCompraSerializer(serializers.ModelSerializer):
     # Maneja los detalles de los productos en una factura de compra.
     producto_nombre = serializers.CharField(source='producto.nombre', read_only=True)
     codigo_barras = serializers.CharField(source='producto.codigo_barras', read_only=True)
-    producto = serializers.PrimaryKeyRelatedField(queryset=Producto.objects.all())
+    producto = serializers.PrimaryKeyRelatedField(queryset=Producto.objects.all(), required=False, allow_null=True)
     subtotal = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
 
     class Meta:
@@ -57,6 +57,8 @@ class FacturaCompraSerializer(serializers.ModelSerializer):
     detalles = DetalleFacturaCompraSerializer(many=True)
     proveedor_nombre = serializers.CharField(source='proveedor.nombre', read_only=True)
     total = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
+    # Campo para porcentaje de ganancia global que se aplicará a todos los productos nuevos
+    porcentaje_ganancia_global = serializers.DecimalField(max_digits=5, decimal_places=2, required=False, write_only=True)
 
     class Meta:
         model = FacturaCompra
@@ -129,11 +131,41 @@ class VentaSerializer(serializers.ModelSerializer):
     # Incluye los detalles de la venta anidados.
     detalles = DetalleVentaSerializer(many=True)
 
+    # Opcional: enviar factura y comprobante por correo (solo si el vendedor lo solicita).
+    enviar_factura_por_correo = serializers.BooleanField(required=False, write_only=True, default=False)
+    correo_cliente = serializers.EmailField(required=False, write_only=True, allow_blank=True, allow_null=True)
+    nombre_cliente = serializers.CharField(required=False, write_only=True, allow_blank=True, allow_null=True)
+    documento_cliente = serializers.CharField(required=False, write_only=True, allow_blank=True, allow_null=True)
+
     class Meta:
         model = Venta
-        # Listar explícitamente los campos de entrada. 'total' se calcula en el backend.
-        fields = ('id', 'fecha_venta', 'metodo_pago', 'vendedor', 'detalles')
-        read_only_fields = ('total',) # El campo total es de solo lectura (salida), calculado por el backend.
+        # Listar explícitamente los campos de salida. 'total' se calcula en el backend.
+        fields = (
+            'id',
+            'fecha_venta',
+            'metodo_pago',
+            'vendedor',
+            'total',
+            'detalles',
+            # Campos opcionales de envío (write_only)
+            'enviar_factura_por_correo',
+            'correo_cliente',
+            'nombre_cliente',
+            'documento_cliente',
+        )
+        read_only_fields = ('total',)  # 'total' es de solo lectura (salida).
+
+    def validate(self, attrs):
+        """
+        Si el vendedor solicita envío por correo, el correo del cliente es obligatorio.
+        """
+        enviar = attrs.get('enviar_factura_por_correo', False)
+        correo = attrs.get('correo_cliente', None)
+        if enviar and not correo:
+            raise serializers.ValidationError({
+                'correo_cliente': 'El correo del cliente es obligatorio si solicita envío de factura/comprobante.'
+            })
+        return attrs
 
     def create(self, validated_data):
         from api.utils.inventory_validator import validar_stock_disponible, validar_precio_venta
@@ -143,6 +175,12 @@ class VentaSerializer(serializers.ModelSerializer):
         print(f"DEBUG: VentaSerializer.create - Datos validados (antes de pop): {validated_data}")
         detalles_data = validated_data.pop('detalles', [])
         print(f"DEBUG: VentaSerializer.create - Datos de detalles extraídos: {detalles_data}")
+
+        # Extraer datos opcionales de envío (no pertenecen al modelo Venta).
+        enviar_factura_por_correo = validated_data.pop('enviar_factura_por_correo', False)
+        correo_cliente = validated_data.pop('correo_cliente', None)
+        nombre_cliente = validated_data.pop('nombre_cliente', None)
+        documento_cliente = validated_data.pop('documento_cliente', None)
 
         # Iniciar una transacción atómica para asegurar la consistencia
         with transaction.atomic():
@@ -199,6 +237,24 @@ class VentaSerializer(serializers.ModelSerializer):
             venta.save()
 
             print(f"DEBUG: VentaSerializer.create - Venta final guardada con ID: {venta.id}, Total: {venta.total}")
+
+            # Envío de correo opcional (mejor esfuerzo). Nunca debe impedir registrar la venta.
+            if enviar_factura_por_correo and correo_cliente:
+                venta_id = venta.id
+                email_destino = correo_cliente
+                cliente_nombre = nombre_cliente
+                cliente_documento = documento_cliente
+
+                # Ejecutar luego del commit para evitar inconsistencias si algo falla en la transacción.
+                from api.utils.sale_email import send_venta_invoice_email
+                transaction.on_commit(
+                    lambda: send_venta_invoice_email(
+                        venta_id=venta_id,
+                        correo_cliente=email_destino,
+                        nombre_cliente=cliente_nombre,
+                        documento_cliente=cliente_documento,
+                    )
+                )
 
             return venta
 

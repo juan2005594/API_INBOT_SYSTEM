@@ -6,6 +6,8 @@ from .views import (
     LoginView, LogoutView
 )
 
+app_name = 'core_api'
+
 # Configurar el router para las vistas basadas en ViewSet
 router = DefaultRouter()
 router.register(r'categorias', CategoriaViewSet, basename='categoria')

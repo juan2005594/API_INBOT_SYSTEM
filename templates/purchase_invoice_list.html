@@ -215,6 +215,11 @@
                     <label for="fecha_compra">Fecha de Compra:</label>
                     <input type="date" id="fecha_compra" name="fecha_compra" required>
                 </div>
+                <div class="form-group">
+                    <label for="porcentaje_ganancia_global">Porcentaje de Ganancia Global (%):</label>
+                    <input type="number" id="porcentaje_ganancia_global" name="porcentaje_ganancia_global" min="0" max="100" step="0.01" value="30" placeholder="30">
+                    <small style="color: #666; display: block; margin-top: 5px;">Este porcentaje se aplicará a todos los productos nuevos</small>
+                </div>
 
                 <div class="invoice-details-section">
                     <h3>Detalles de la Factura</h3>
@@ -240,7 +245,7 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const invoicesContainer = document.getElementById('invoices-container');
-            const apiURL = 'http://127.0.0.1:8000/api/facturas-compra/'; // URL de tu API de facturas de compra
+            const apiURL = '/core-api/facturas-compra/'; // URL de tu API de facturas de compra
             const addPurchaseInvoiceForm = document.getElementById('addPurchaseInvoiceForm');
             const formMessage = document.getElementById('form-message');
             const proveedorSelect = document.getElementById('proveedor');
@@ -249,6 +254,7 @@
 
             let products = []; // Para almacenar productos para los selectores
             let suppliers = []; // Para almacenar proveedores para los selectores
+            let categories = []; // Para almacenar categorías para los selectores
 
             // Function to get CSRF token
             function getCookie(name) {
@@ -269,7 +275,7 @@
             // Función para cargar proveedores
             async function loadSuppliers() {
                 try {
-                    const response = await fetch('http://127.0.0.1:8000/api/proveedores/');
+                    const response = await fetch('/core-api/proveedores/');
                     suppliers = (await response.json()).results || [];
                     proveedorSelect.innerHTML = '<option value="">Seleccione un proveedor</option>';
                     suppliers.forEach(prov => {
@@ -279,9 +285,36 @@
                         proveedorSelect.appendChild(option);
                     });
 
-                    // Cargar productos
-                    const productsResponse = await fetch('http://127.0.0.1:8000/api/productos/');
-                    products = (await productsResponse.json()).results || [];
+                    // Cargar productos (TODOS, no solo la primera página)
+                    products = [];
+                    let nextProductUrl = '/core-api/productos/';
+                    
+                    let page = 1;
+                    while (true) {
+                        const productsResponse = await fetch(`/core-api/productos/?page=${page}&format=json`);
+                        const productsData = await productsResponse.json();
+                        
+                        if (productsData.results && productsData.results.length > 0) {
+                            products = products.concat(productsData.results);
+                        }
+                        
+                        if (!productsData.next) {
+                            break;
+                        }
+                        page++;
+                    }
+                    
+                    console.log(`Productos cargados para factura de compra: ${products.length}`);
+                    
+                    // Cargar categorías
+                    try {
+                        const categoriesResponse = await fetch('/core-api/categorias/');
+                        categories = (await categoriesResponse.json()).results || [];
+                        console.log('Categorías cargadas:', categories);
+                    } catch (error) {
+                        console.error('Error cargando categorías:', error);
+                        categories = [];
+                    }
 
                     // Añadir una fila de detalle inicial
                     addNewDetailRow();
@@ -293,12 +326,41 @@
                     formMessage.style.display = 'block';
                 }
             }
+            
+            // Función para cargar categorías
+            async function loadCategories() {
+                try {
+                    const response = await fetch('/core-api/categorias/');
+                    categories = (await response.json()).results || [];
+                } catch (error) {
+                    console.error('Error al cargar categorías:', error);
+                }
+            }
 
             // Función para cargar productos para los selectores de detalle de factura de compra
             async function loadProductsForDetails() {
                 try {
-                    const response = await fetch('http://127.0.0.1:8000/api/productos/');
-                    products = (await response.json()).results || [];
+                    // Cargar TODOS los productos (todas las páginas)
+                    products = [];
+                    let nextProductUrl = '/core-api/productos/';
+                    
+                    let page = 1;
+                    while (true) {
+                        const response = await fetch(`/core-api/productos/?page=${page}&format=json`);
+                        const productsData = await response.json();
+                        
+                        if (productsData.results && productsData.results.length > 0) {
+                            products = products.concat(productsData.results);
+                        }
+                        
+                        if (!productsData.next) {
+                            break;
+                        }
+                        page++;
+                    }
+                    
+                    console.log(`Productos recargados para detalles: ${products.length}`);
+                    
                     // Populate existing product selects
                     document.querySelectorAll('.product-select').forEach(select => {
                         populateProductSelect(select);
@@ -326,9 +388,37 @@
                 newDetailRow.className = 'detail-row';
                 newDetailRow.innerHTML = `
                     <div class="form-group">
-                        <select name="producto" class="product-select" required>
+                        <label>Tipo de Producto:</label>
+                        <select class="product-type-select" required>
+                            <option value="existente">Producto Existente</option>
+                            <option value="nuevo">Producto Nuevo</option>
+                        </select>
+                    </div>
+                    <div class="form-group product-existing-group">
+                        <label>Producto:</label>
+                        <select name="producto" class="product-select">
                             <!-- Opciones cargadas por JS -->
                         </select>
+                    </div>
+                    <div class="product-new-group" style="display: none;">
+                        <div class="form-group">
+                            <label>Código de Barras:</label>
+                            <input type="text" class="product-codigo" placeholder="Código de Barras">
+                        </div>
+                        <div class="form-group">
+                            <label>Nombre del Producto:</label>
+                            <input type="text" class="product-nombre" placeholder="Nombre del Producto" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Descripción:</label>
+                            <textarea class="product-descripcion" placeholder="Descripción"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Categoría:</label>
+                            <select class="product-categoria" required>
+                                <option value="">Seleccione Categoría</option>
+                            </select>
+                        </div>
                     </div>
                     <div class="form-group">
                         <input type="number" name="cantidad" placeholder="Cantidad" min="1" value="1" required>
@@ -339,9 +429,38 @@
                     <button type="button" class="remove-detail-row-button">X</button>
                 `;
                 detailsContainer.appendChild(newDetailRow);
+                
                 // Populate the product select in the newly added row
                 const newProductSelect = newDetailRow.querySelector('.product-select');
                 populateProductSelect(newProductSelect);
+                
+                // Populate categories select
+                const categorySelect = newDetailRow.querySelector('.product-categoria');
+                if (categorySelect && categories.length > 0) {
+                    categorySelect.innerHTML = '<option value="">Seleccione Categoría</option>';
+                    categories.forEach(cat => {
+                        const option = document.createElement('option');
+                        option.value = cat.id;
+                        option.textContent = cat.nombre;
+                        categorySelect.appendChild(option);
+                    });
+                    console.log('Categorías pobladas en el selector:', categories.length);
+                } else if (categorySelect) {
+                    console.warn('No hay categorías disponibles para poblar el selector');
+                }
+                
+                // Add event listener for product type change
+                const productTypeSelect = newDetailRow.querySelector('.product-type-select');
+                productTypeSelect.addEventListener('change', function() {
+                    const isNew = this.value === 'nuevo';
+                    const existingGroup = newDetailRow.querySelector('.product-existing-group');
+                    const newGroup = newDetailRow.querySelector('.product-new-group');
+                    existingGroup.style.display = isNew ? 'none' : 'block';
+                    newGroup.style.display = isNew ? 'block' : 'none';
+                    // Make required fields dynamic
+                    existingGroup.querySelector('select').required = !isNew;
+                    newGroup.querySelectorAll('input, select').forEach(el => el.required = isNew);
+                });
             }
 
             // Event listener for adding a new detail row
@@ -354,19 +473,42 @@
                 const numeroFactura = document.getElementById('numero_factura').value;
                 const proveedorId = document.getElementById('proveedor').value;
                 const fechaCompra = document.getElementById('fecha_compra').value;
+                const porcentajeGananciaGlobal = document.getElementById('porcentaje_ganancia_global').value;
 
                 const detalles = [];
                 document.querySelectorAll('.detail-row').forEach(row => {
-                    const productoId = row.querySelector('select[name="producto"]').value;
+                    const productType = row.querySelector('.product-type-select').value;
                     const cantidad = row.querySelector('input[name="cantidad"]').value;
                     const precioUnitario = row.querySelector('input[name="precio_unitario"]').value;
 
-                    if (productoId && cantidad && precioUnitario) {
-                        detalles.push({
-                            producto: parseInt(productoId),
-                            cantidad: parseInt(cantidad),
-                            precio_unitario: parseFloat(precioUnitario)
-                        });
+                    if (!cantidad || !precioUnitario) return;
+
+                    if (productType === 'existente') {
+                        const productoId = row.querySelector('.product-select').value;
+                        if (productoId) {
+                            detalles.push({
+                                producto: parseInt(productoId),
+                                cantidad: parseInt(cantidad),
+                                precio_unitario: parseFloat(precioUnitario)
+                            });
+                        }
+                    } else if (productType === 'nuevo') {
+                        const codigo = row.querySelector('.product-codigo').value;
+                        const nombre = row.querySelector('.product-nombre').value;
+                        const descripcion = row.querySelector('.product-descripcion').value;
+                        const categoriaId = row.querySelector('.product-categoria').value;
+                        
+                        if (nombre && categoriaId) {
+                            detalles.push({
+                                producto_nuevo: true,
+                                codigo_barras: codigo || '',
+                                nombre: nombre,
+                                descripcion: descripcion || 'Sin descripción',
+                                categoria_id: parseInt(categoriaId),
+                                cantidad: parseInt(cantidad),
+                                precio_unitario: parseFloat(precioUnitario)
+                            });
+                        }
                     }
                 });
 
@@ -379,6 +521,7 @@
                     numero_factura: numeroFactura,
                     proveedor: parseInt(proveedorId),
                     fecha_compra: fechaCompra,
+                    porcentaje_ganancia_global: porcentajeGananciaGlobal ? parseFloat(porcentajeGananciaGlobal) : 30,
                     detalles: detalles
                 };
 
@@ -448,5 +591,7 @@
             loadProductsForDetails(); // Call this to populate product dropdowns
         });
     </script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    {% include "includes/inbotf_chatbot.html" %}
 </body>
 </html> 

@@ -1,0 +1,147 @@
+.productos-page {
+  background: white;
+  padding: 2rem;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.producto-form {
+  background: #f8f9fa;
+  padding: 2rem;
+  border-radius: 10px;
+  margin-bottom: 2rem;
+}
+
+.producto-form h2 {
+  color: #333;
+  margin-bottom: 1.5rem;
+}
+
+.producto-form select {
+  width: 100%;
+  padding: 0.75rem;
+  border: 2px solid #ddd;
+  border-radius: 5px;
+  font-size: 1rem;
+}
+
+.producto-form select:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.productos-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.producto-card {
+  background: #f8f9fa;
+  padding: 1.5rem;
+  border-radius: 10px;
+  border-left: 4px solid #667eea;
+}
+
+.producto-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.producto-header h3 {
+  color: #333;
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.badge-activo {
+  background: #d4edda;
+  color: #155724;
+}
+
+.badge-inactivo {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.badge-bloqueado {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.producto-info p {
+  margin: 0.5rem 0;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.producto-info strong {
+  color: #333;
+}
+
+.btn-secondary {
+  background: #6c757d;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: 500;
+  margin-top: 1rem;
+  width: 100%;
+  transition: background 0.3s;
+}
+
+.btn-secondary:hover {
+  background: #5a6268;
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  padding: 2rem;
+  border-radius: 10px;
+  max-width: 500px;
+  width: 90%;
+}
+
+.modal-content h2 {
+  color: #333;
+  margin-bottom: 1.5rem;
+}
+
+.saldo-info p {
+  margin: 1rem 0;
+  color: #666;
+  font-size: 1rem;
+}
+
+.saldo-amount {
+  font-size: 1.5rem !important;
+  color: #667eea !important;
+  font-weight: 700;
+  margin: 1.5rem 0 !important;
+}
+
+
