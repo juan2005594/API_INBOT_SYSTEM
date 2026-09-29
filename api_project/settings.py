@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 import os
+import dj_database_url
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -34,25 +35,33 @@ def _load_dotenv(dotenv_path: Path) -> None:
             if key and key not in os.environ:
                 os.environ[key] = value
     except Exception:
-        # En desarrollo preferimos no romper el arranque por un .env mal formado.
         return
 
 # Carga opcional de variables locales (no se versiona).
 _load_dotenv(BASE_DIR / '.env')
 _load_dotenv(BASE_DIR / '.env.local')
 
-
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
+# Detección de entorno (Render u otros hosts cloud)
+IS_RENDER = 'RENDER' in os.environ
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-q1=u=0v#5652o+if1idef%7lflbhx8-o2kxcezi+pv_dhii$r4'
+SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-q1=u=0v#5652o+if1idef%7lflbhx8-o2kxcezi+pv_dhii$r4')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DEBUG', 'False' if IS_RENDER else 'True').lower() in ('true', '1', 'yes')
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*'] if DEBUG else [h.strip() for h in os.getenv('ALLOWED_HOSTS', '*').split(',') if h.strip()]
+if os.getenv('RENDER_EXTERNAL_HOSTNAME'):
+    ALLOWED_HOSTS.append(os.getenv('RENDER_EXTERNAL_HOSTNAME'))
 
+CSRF_TRUSTED_ORIGINS = [
+    'https://*.onrender.com',
+    'http://localhost:8000',
+    'http://127.0.0.1:8000',
+]
+render_url = os.getenv('RENDER_EXTERNAL_URL')
+if render_url:
+    CSRF_TRUSTED_ORIGINS.append(render_url)
 
 # Application definition
 
@@ -72,6 +81,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -99,21 +109,38 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'api_project.wsgi.application'
 
-
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
-
-DATABASES = {
-    'default': {
-        'ENGINE': 'mssql',
-        'NAME': 'inbotf_system',
-        'HOST': 'ING_SANCHEZ',
-        'OPTIONS': {
-            'driver': 'ODBC Driver 17 for SQL Server',
-            'trusted_connection': 'yes',
-        },
+# En producción (Render) se utiliza DATABASE_URL (PostgreSQL).
+# En desarrollo local se utiliza MSSQL si está disponible o SQLite.
+DATABASE_URL = os.getenv('DATABASE_URL')
+if DATABASE_URL:
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=DATABASE_URL,
+            conn_max_age=600,
+            conn_health_checks=True,
+        )
     }
-}
+elif os.getenv('USE_SQLITE', 'false').lower() in ('true', '1', 'yes') or os.name != 'nt':
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'mssql',
+            'NAME': os.getenv('DB_NAME', 'inbotf_system'),
+            'HOST': os.getenv('DB_HOST', 'ING_SANCHEZ'),
+            'OPTIONS': {
+                'driver': 'ODBC Driver 17 for SQL Server',
+                'trusted_connection': 'yes',
+            },
+        }
+    }
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
@@ -133,23 +160,23 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'es-co'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'America/Bogota'
 
 USE_I18N = True
 
 USE_TZ = True
 
-
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 
 # Media files
 MEDIA_URL = '/media/'
@@ -179,8 +206,6 @@ REST_FRAMEWORK = {
 }
 
 # Configuración de correo electrónico
-# Se toma desde variables de entorno para evitar credenciales en el repo.
-# Recomendado (Gmail): usar "App Password" y no la contraseña normal.
 EMAIL_BACKEND = os.getenv('DJANGO_EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend')
 EMAIL_HOST = os.getenv('DJANGO_EMAIL_HOST', 'smtp.gmail.com')
 EMAIL_PORT = int(os.getenv('DJANGO_EMAIL_PORT', '587'))
@@ -190,14 +215,9 @@ EMAIL_HOST_PASSWORD = os.getenv('DJANGO_EMAIL_HOST_PASSWORD', '')
 DEFAULT_FROM_EMAIL = os.getenv('DJANGO_DEFAULT_FROM_EMAIL', EMAIL_HOST_USER or 'no-reply@localhost')
 EMAIL_TIMEOUT = int(os.getenv('DJANGO_EMAIL_TIMEOUT', '15'))
 
-# Configuración de zona horaria
-TIME_ZONE = 'America/Bogota'
-USE_TZ = True
+# Configuración de proxy y SSL para hosts en la nube (Render, Railway, etc.)
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
-# Configuración de idioma
-LANGUAGE_CODE = 'es-co'
-
-# Configuración de seguridad
 if not DEBUG:
     SECURE_SSL_REDIRECT = True
     SESSION_COOKIE_SECURE = True
@@ -216,7 +236,12 @@ CACHES = {
     }
 }
 
-# Configuración de logging
+# Configuración de logging segura
+try:
+    (BASE_DIR / 'logs').mkdir(parents=True, exist_ok=True)
+except Exception:
+    pass
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -227,16 +252,15 @@ LOGGING = {
         },
     },
     'handlers': {
-        'file': {
+        'console': {
             'level': 'INFO',
-            'class': 'logging.FileHandler',
-            'filename': BASE_DIR / 'logs/debug.log',
+            'class': 'logging.StreamHandler',
             'formatter': 'verbose',
         },
     },
     'loggers': {
         'django': {
-            'handlers': ['file'],
+            'handlers': ['console'],
             'level': 'INFO',
             'propagate': True,
         },

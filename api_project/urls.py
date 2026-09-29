@@ -17,8 +17,8 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
-from django.conf.urls.static import static
-from django.views.generic import TemplateView
+from django.views.static import serve
+from django.urls import re_path
 
 urlpatterns = [
     path('', TemplateView.as_view(template_name="login.html"), name='home'),
@@ -31,4 +31,5 @@ urlpatterns = [
     path('proveedores-lista/', TemplateView.as_view(template_name="supplier_list.html"), name='supplier_list'),
     path('facturas-compra-lista/', TemplateView.as_view(template_name="purchase_invoice_list.html"), name='purchase_invoice_list'),
     path('ventas-lista/', TemplateView.as_view(template_name="sale_list.html"), name='sale_list'),
-] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    re_path(r'^media/(?P<path>.*)$', serve, {'document_root': settings.MEDIA_ROOT}),
+] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

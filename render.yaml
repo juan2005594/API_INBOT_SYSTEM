@@ -1,0 +1,22 @@
+﻿databases:
+  - name: inbot-db
+    databaseName: inbotf_system
+    user: inbot_user
+    plan: free
+
+services:
+  - type: web
+    name: inbot-api
+    runtime: python
+    plan: free
+    buildCommand: "bash build.sh"
+    startCommand: "gunicorn api_project.wsgi:application"
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: inbot-db
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: PYTHON_VERSION
+        value: 3.11.9

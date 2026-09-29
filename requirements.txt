@@ -1,10 +1,13 @@
-Django==5.0.14
+﻿Django==5.0.14
 djangorestframework==3.16.0
 django-filter==25.1.0
-mssql-django==1.5
 python-docx==1.1.2
 Pillow==11.2.1
-pyodbc==5.2.0
 lxml==5.4.0
 pytz==2025.2
-
+psycopg2-binary==2.9.13
+dj-database-url==3.1.2
+whitenoise==6.12.0
+gunicorn==22.0.0; sys_platform != 'win32'
+mssql-django==1.5; sys_platform == 'win32'
+pyodbc==5.2.0; sys_platform == 'win32'
